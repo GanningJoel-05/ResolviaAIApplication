@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ticket Information - ResolviaAI</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="dashboard.css">
+</head>
+<body class="dashboard-body">
+
+    <div class="user-main-wrapper">
+        <nav class="dashboard-nav">
+            <span class="nav-page-title">Ticket Information</span>
+            <div class="nav-right">
+                <div class="user-profile" onclick="window.location.href='profile.html'" title="My Profile">
+                    <div class="avatar" id="userAvatar">A</div>
+                    <div class="user-info">
+                        <span class="user-name"  id="userNameText">User</span>
+                        <span class="user-email" id="userEmailText"><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="0d787e687f4d68606c6461236e6260">[email&#160;protected]</a></span>
+                    </div>
+                </div>
+                <button class="btn-logout" onclick="handleLogout()">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                        <polyline points="16 17 21 12 16 7"></polyline>
+                        <line x1="21" y1="12" x2="9" y2="12"></line>
+                    </svg>
+                </button>
+            </div>
+        </nav>
+
+        <main class="dashboard-main form-page-main">
+            <a href="dashboard.html" class="back-link">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"
+                    fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="19" y1="12" x2="5" y2="12"></line>
+                    <polyline points="12 19 5 12 12 5"></polyline>
+                </svg>
+                Back to Dashboard
+            </a>
+
+            <header class="page-header">
+                <h1>Ticket Information</h1>
+                <!-- MOD 2b: subtitle updated dynamically based on ticket state -->
+                <p id="pageSubtitle">Your ticket is being analyzed. This page refreshes automatically every 5 seconds.</p>
+            </header>
+
+            <section class="card ticket-details-card">
+                <div id="statusTimeline"></div>
+
+                <div class="ticket-meta">
+                    <div class="meta-item">
+                        <span class="meta-label">Ticket Number</span>
+                        <span class="meta-value" id="view-ticket-id">Loading...</span>
+                    </div>
+                    <div class="meta-item">
+                        <span class="meta-label">Date</span>
+                        <span class="meta-value" id="view-ticket-date">--/--/----</span>
+                    </div>
+                    <div class="meta-item">
+                        <span class="meta-label">Category</span>
+                        <span class="meta-value" id="view-ticket-category">—</span>
+                    </div>
+                    <div class="meta-item">
+                        <span class="meta-label">Status</span>
+                        <span class="badge badge-inprocess" id="ticketStatusBadge">In Progress</span>
+                    </div>
+                    <!-- BATCH 5A: Show which admin resolved this ticket (hidden until resolved) -->
+                    <div class="meta-item" id="resolverAdminRow" style="display:none;">
+                        <span class="meta-label">Resolved By</span>
+                        <span class="meta-value" id="resolverAdminValue">—</span>
+                    </div>
+                </div>
+
+                <div class="ticket-content block-divider">
+                    <h3 id="view-ticket-title" class="ticket-title-large">Loading...</h3>
+                    <p  id="view-ticket-desc"  class="ticket-desc-text">Loading description...</p>
+                </div>
+
+                <!--
+                    MOD 2b: Status box — replaced static HTML with a dynamic container.
+                    JS will render one of 2 states:
+                      1. Normal AI analysis in progress  (aiResolutionType != "MANUAL")
+                      2. AI unavailable, admin resolving (aiResolutionType == "MANUAL" && aiConfidence == null)
+                -->
+                <div id="ticketStatusBox">
+                    <!-- Default shown before JS loads — same as "AI analyzing" state -->
+                    <div class="solution-box pending-box">
+                        <div class="solution-header">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
+                                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                                class="spin-icon">
+                                <line x1="12" y1="2"  x2="12" y2="6"></line>
+                                <line x1="12" y1="18" x2="12" y2="22"></line>
+                                <line x1="4.93"  y1="4.93"  x2="7.76"  y2="7.76"></line>
+                                <line x1="16.24" y1="16.24" x2="19.07" y2="19.07"></line>
+                                <line x1="2"  y1="12" x2="6"  y2="12"></line>
+                                <line x1="18" y1="12" x2="22" y2="12"></line>
+                                <line x1="4.93"  y1="19.07" x2="7.76"  y2="16.24"></line>
+                                <line x1="16.24" y1="7.76"  x2="19.07" y2="4.93"></line>
+                            </svg>
+                            <h4>AI Analysis In Progress</h4>
+                        </div>
+                        <div class="solution-body">
+                            <p>Your ticket is under review. AI is analyzing your issue. This page checks for updates every 5 seconds.</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <style>
+        /* Dark mode: Routed to Admin review box */
+        [data-theme="dark"] .routed-admin-box {
+            background: #0c1a3a !important;
+            border-left-color: #6366f1 !important;
+            border-top-color: #1e3a8a !important;
+            border-right-color: #1e3a8a !important;
+            border-bottom-color: #1e3a8a !important;
+        }
+        [data-theme="dark"] .routed-admin-box h4 { color: #818cf8 !important; }
+        [data-theme="dark"] .routed-admin-box p  { color: #93c5fd !important; }
+        [data-theme="dark"] .routed-admin-hint   { background: rgba(99,102,241,0.15) !important; color: #a5b4fc !important; }
+    </style>
+    <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script src="common.js"></script>
+    <script src="theme.js"></script>
+    <script src="dashboard.js"></script>
+    <script>
+        // Render the correct status box based on ticket data.
+        // There are 4 distinct states:
+        //   1. OPEN / just submitted          → AI is still analysing (spinner)
+        //   2. IN_PROGRESS + HUMAN            → AI analysed, confidence < 75%, routed to admin
+        //   3. IN_PROGRESS + MANUAL (no conf) → AI was unavailable, admin resolving manually
+        //   4. RESOLVED                       → redirected to ticket-solution.html (handled below)
+        function renderTicketInfoStatusBox(ticket) {
+            const box      = document.getElementById("ticketStatusBox");
+            const subtitle = document.getElementById("pageSubtitle");
+            if (!box) return;
+
+            // ── State 3: API was unavailable (MANUAL + null confidence) ───
+            const isApiUnavailable =
+                ticket.aiResolutionType === "MANUAL" &&
+                (ticket.aiConfidence === null || ticket.aiConfidence === undefined);
+
+            // ── State 2: AI analysed but low confidence → routed to admin ─
+            // aiResolutionType === "HUMAN" means routing service said "go to admin"
+            const isRoutedToAdmin =
+                ticket.aiResolutionType === "HUMAN" &&
+                ticket.status === "IN_PROGRESS";
+
+            if (isRoutedToAdmin) {
+                // ── Routed to Admin Review ────────────────────────────────
+                if (subtitle) subtitle.innerText =
+                    "AI analysed your ticket but routed it to an admin for a more accurate resolution. Please wait.";
+
+                const conf = ticket.aiConfidence != null
+                    ? " (AI Confidence: " + ticket.aiConfidence + "%)" : "";
+
+                box.innerHTML = `
+                    <div class="solution-box routed-admin-box" style="
+                        background:#eff6ff;
+                        border-left:4px solid #4f46e5;
+                        border-top:1px solid #bfdbfe;
+                        border-right:1px solid #bfdbfe;
+                        border-bottom:1px solid #bfdbfe;
+                        border-radius:var(--radius);">
+                        <div class="solution-header">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20"
+                                viewBox="0 0 24 24" fill="none" stroke="#4f46e5"
+                                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                                <circle cx="9" cy="7" r="4"></circle>
+                                <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                                <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                            </svg>
+                            <h4 style="color:#3730a3;">Routed to Admin Review</h4>
+                        </div>
+                        <div class="solution-body">
+                            <p style="color:#1e3a8a;">
+                                Our AI analysed your ticket${conf} but determined this issue
+                                needs a human expert for the most accurate resolution.
+                                Your ticket has been assigned to our support team and will
+                                be resolved shortly. You will be notified by email once done.
+                            </p>
+                            <div class="routed-admin-hint" style="
+                                display:flex; align-items:center; gap:0.6rem;
+                                margin-top:0.85rem; padding:0.6rem 0.9rem;
+                                background:rgba(79,70,229,0.08); border-radius:8px;
+                                font-size:0.83rem; color:#4338ca; font-weight:500;">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15"
+                                    viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <circle cx="12" cy="12" r="10"></circle>
+                                    <polyline points="12 6 12 12 16 14"></polyline>
+                                </svg>
+                                This page will automatically update when your ticket is resolved.
+                            </div>
+                        </div>
+                    </div>`;
+
+            } else if (isApiUnavailable) {
+                // ── AI Unavailable ────────────────────────────────────────
+                if (subtitle) subtitle.innerText =
+                    "AI service was unavailable when this ticket was submitted. An admin will resolve it manually.";
+
+                box.innerHTML = `
+                    <div class="solution-box" style="
+                        background:#fff7ed;
+                        border-left:4px solid #f97316;
+                        border-top:1px solid #fed7aa;
+                        border-right:1px solid #fed7aa;
+                        border-bottom:1px solid #fed7aa;
+                        border-radius:var(--radius);">
+                        <div class="solution-header">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20"
+                                viewBox="0 0 24 24" fill="none" stroke="#f97316"
+                                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <line x1="12" y1="8" x2="12" y2="12"></line>
+                                <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                            </svg>
+                            <h4 style="color:#c2410c;">AI Unavailable — Admin Will Resolve</h4>
+                        </div>
+                        <div class="solution-body">
+                            <p style="color:#7c2d12;">
+                                The AI service was temporarily unavailable when your ticket was submitted.
+                                Your ticket has been forwarded to an admin who will review and resolve it manually.
+                                Please check back later for an update.
+                            </p>
+                        </div>
+                    </div>`;
+
+            } else {
+                // ── State 1: Still being analysed (OPEN / freshly submitted) ─
+                if (subtitle) subtitle.innerText =
+                    "Your ticket is being analyzed. This page refreshes automatically every 5 seconds.";
+
+                box.innerHTML = `
+                    <div class="solution-box pending-box">
+                        <div class="solution-header">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20"
+                                viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                                class="spin-icon">
+                                <line x1="12" y1="2"  x2="12" y2="6"></line>
+                                <line x1="12" y1="18" x2="12" y2="22"></line>
+                                <line x1="4.93"  y1="4.93"  x2="7.76"  y2="7.76"></line>
+                                <line x1="16.24" y1="16.24" x2="19.07" y2="19.07"></line>
+                                <line x1="2"  y1="12" x2="6"  y2="12"></line>
+                                <line x1="18" y1="12" x2="22" y2="12"></line>
+                                <line x1="4.93"  y1="19.07" x2="7.76"  y2="16.24"></line>
+                                <line x1="16.24" y1="7.76"  x2="19.07" y2="4.93"></line>
+                            </svg>
+                            <h4>AI Analysis In Progress</h4>
+                        </div>
+                        <div class="solution-body">
+                            <p>Your ticket is under review. AI is analyzing your issue. This page checks for updates every 5 seconds.</p>
+                        </div>
+                    </div>`;
+            }
+        }
+
+        // Override loadTicketDetails to also call our status box renderer
+        document.addEventListener("DOMContentLoaded", () => {
+            injectSidebar("dashboard");
+            loadUserProfile();
+
+            const id = localStorage.getItem("currentViewTicketId");
+            if (!id) return;
+
+            function fetchAndRender() {
+                fetch(`${API_BASE_URL}/tickets/${id}`, { headers: getAuthHeaders() })
+                    .then(r => r.json())
+                    .then(ticket => {
+                        const set = (elId, val) => { const el = document.getElementById(elId); if(el) el.innerText = val || "—"; };
+                        set("view-ticket-id",       ticket.ticketNumber || "#" + ticket.id);
+                        set("view-ticket-date",     formatDate(ticket.createdAt));
+                        set("view-ticket-category", ticket.category || "General");
+                        set("view-ticket-title",    ticket.title);
+                        set("view-ticket-desc",     ticket.description);
+
+                        renderStatusTimeline(ticket);
+                        renderTicketInfoStatusBox(ticket);
+
+                        // BATCH 5A: Show resolver admin if ticket was resolved by admin
+                        if (ticket.resolvedByAdminName && ticket.aiResolutionType !== "AUTO") {
+                            var row = document.getElementById("resolverAdminRow");
+                            var val = document.getElementById("resolverAdminValue");
+                            if (row) row.style.display = "";
+                            if (val) {
+                                var adminId = ticket.resolvedByAdminId
+                                    ? " (RVA-" + String(ticket.resolvedByAdminId).padStart(4, "0") + ")"
+                                    : "";
+                                val.innerHTML = "<strong>" + ticket.resolvedByAdminName + "</strong>" +
+                                    "<span style='color:var(--text-muted);font-size:0.82rem;'>" + adminId + "</span>";
+                            }
+                        }
+
+                        // Redirect to solution page if resolved
+                        if (ticket.status === "RESOLVED") {
+                            window.location.href = "ticket-solution.html";
+                        }
+                    })
+                    .catch(err => console.error("Ticket info load error:", err));
+                }
+                fetchAndRender();
+            // Auto-refresh every 5 seconds
+            setInterval(fetchAndRender, 5000);
+        });
+                
+    </script>
+</body>
+</html>

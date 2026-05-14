@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ticket Management - ResolviaAI Admin</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="admin-dashboard.css">
+    <style>
+        .sidebar-badge {
+            display:inline-flex; align-items:center; justify-content:center;
+            min-width:20px; height:20px; border-radius:99px;
+            background:#ef4444; color:#fff; font-size:0.7rem; font-weight:700;
+            margin-left:auto; padding:0 5px;
+        }
+        .filter-btn {
+            padding:0.4rem 1rem; border:1px solid var(--border-color);
+            background:transparent; border-radius:6px; font-size:0.85rem;
+            font-weight:500; cursor:pointer; color:var(--text-color);
+            transition:all 0.2s ease; font-family:inherit;
+        }
+        .filter-btn:hover  { background:#f3f4f6; }
+        .filter-btn.active { background:var(--primary-accent); color:#fff; border-color:var(--primary-accent); }
+        .search-bar {
+            display:flex; align-items:center; gap:0.5rem;
+            background:#f9fafb; border:1px solid var(--border-color);
+            border-radius:8px; padding:0.5rem 0.85rem; flex:1; max-width:400px;
+        }
+        .search-bar input {
+            border:none; background:transparent; outline:none;
+            font-size:0.9rem; color:var(--text-color); width:100%; font-family:inherit;
+        }
+        .search-bar svg { flex-shrink:0; color:#9ca3af; }
+        .sortable { cursor:pointer; user-select:none; }
+        .sortable:hover { color:var(--primary-accent); }
+        .sort-icon { margin-left:4px; font-size:0.75rem; color:#9ca3af; }
+    </style>
+</head>
+<body class="admin-body">
+
+    <aside class="sidebar">
+        <div class="sidebar-header"><h2>ResolviaAI</h2></div>
+        <ul class="sidebar-menu">
+            <li><a href="admin-dashboard.html">Dashboard</a></li>
+            <li>
+                <a href="ticket-management.html" class="active" style="display:flex;align-items:center;justify-content:space-between;">
+                    Ticket Management
+                    <span class="sidebar-badge needsReviewBadge" style="display:none;">0</span>
+                </a>
+            </li>
+            <li><a href="ai-decision-panel.html">AI Decision Panel</a></li>
+                        <li><a href="admin-activity-log.html">Activity Log</a></li>
+<li style="margin-top:auto; padding-top:1rem; border-top:1px solid rgba(255,255,255,0.1);">
+                <a href="admin-profile.html">My Profile</a>
+            </li>
+            <li><a href="admin-settings.html">Settings</a></li>
+        </ul>
+    </aside>
+
+    <div class="main-wrapper">
+        <nav class="admin-nav">
+            <div class="nav-title">Ticket Management Overview</div>
+            <div class="nav-right">
+                <div class="user-profile">
+                    <div class="avatar-circle" id="adminAvatar">A</div>
+                    <span class="user-name" id="adminNameText">Admin</span>
+                </div>
+                <button class="btn-logout" onclick="handleLogout()">Logout</button>
+            </div>
+        </nav>
+
+        <main class="admin-content">
+            <section class="card table-card" style="min-height:calc(100vh - 160px);">
+
+                <!-- Top Controls -->
+                <div style="display:flex; flex-wrap:wrap; justify-content:space-between; align-items:center; gap:1rem; margin-bottom:1rem;">
+                    <h2 style="margin:0;">All Support Tickets</h2>
+                    <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
+                        <button class="filter-btn active" onclick="applyFilter('all', this)">All</button>
+                        <button class="filter-btn" onclick="applyFilter('OPEN', this)">Open</button>
+                        <button class="filter-btn" onclick="applyFilter('IN_PROGRESS', this)">Needs Review</button>
+                        <button class="filter-btn" onclick="applyFilter('RESOLVED', this)">Resolved</button>
+                    </div>
+                </div>
+
+                <!-- Export Buttons Row -->
+                <div style="display:flex;justify-content:flex-end;gap:0.5rem;margin-bottom:0.75rem;">
+                    <button onclick="exportCSV()"
+                        style="padding:0.4rem 0.9rem;border-radius:6px;border:1px solid var(--border-color);
+                        background:var(--card-bg);color:var(--text-color);font-size:0.82rem;font-weight:600;
+                        cursor:pointer;font-family:inherit;display:inline-flex;align-items:center;gap:0.4rem;">
+                        📊 Export CSV
+                    </button>
+                    <button onclick="exportPDF()"
+                        style="padding:0.4rem 0.9rem;border-radius:6px;border:1px solid var(--border-color);
+                        background:var(--card-bg);color:var(--text-color);font-size:0.82rem;font-weight:600;
+                        cursor:pointer;font-family:inherit;display:inline-flex;align-items:center;gap:0.4rem;">
+                        📄 Export PDF
+                    </button>
+                    <button onclick="toggleHeatmap()"
+                        style="padding:0.4rem 0.9rem;border-radius:6px;border:1px solid var(--border-color);
+                        background:var(--card-bg);color:var(--text-color);font-size:0.82rem;font-weight:600;
+                        cursor:pointer;font-family:inherit;display:inline-flex;align-items:center;gap:0.4rem;">
+                        🔥 Activity Heatmap
+                    </button>
+                </div>
+
+                <!-- User Activity Heatmap (hidden by default) -->
+                <div id="heatmapContainer" style="display:none; margin-bottom:1.25rem;
+                    background:var(--card-bg);border:1px solid var(--border-color);
+                    border-radius:10px;padding:1.25rem;">
+                    <div style="display:flex;justify-content:space-between;align-items:center;
+                        margin-bottom:1rem;flex-wrap:wrap;gap:0.5rem;">
+                        <div>
+                            <div style="font-weight:700;font-size:0.95rem;color:var(--text-color);">
+                                🔥 Ticket Activity Heatmap
+                            </div>
+                            <div style="font-size:0.78rem;color:#6b7280;margin-top:0.1rem;">
+                                Ticket submission frequency by hour of day
+                            </div>
+                        </div>
+                        <div style="display:flex;align-items:center;gap:0.5rem;font-size:0.75rem;color:#6b7280;">
+                            <span>Low</span>
+                            <div style="display:flex;gap:2px;">
+                                <div style="width:12px;height:12px;border-radius:2px;background:#e0e7ff;"></div>
+                                <div style="width:12px;height:12px;border-radius:2px;background:#a5b4fc;"></div>
+                                <div style="width:12px;height:12px;border-radius:2px;background:#6366f1;"></div>
+                                <div style="width:12px;height:12px;border-radius:2px;background:#4338ca;"></div>
+                                <div style="width:12px;height:12px;border-radius:2px;background:#1e1b4b;"></div>
+                            </div>
+                            <span>High</span>
+                        </div>
+                    </div>
+                    <div id="heatmapGrid" style="display:grid;grid-template-columns:repeat(24,1fr);
+                        gap:3px;"></div>
+                    <div style="display:flex;justify-content:space-between;margin-top:0.4rem;
+                        font-size:0.7rem;color:#9ca3af;">
+                        <span>12am</span><span>6am</span><span>12pm</span><span>6pm</span><span>11pm</span>
+                    </div>
+                </div>
+
+                <!-- Search Row -->
+                <div style="display:flex; gap:1rem; margin-bottom:1rem; align-items:center;">
+                    <div class="search-bar">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                            fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                        </svg>
+                        <input type="text" id="ticketSearch"
+                            placeholder="Search by ticket ID, user, issue or category..."
+                            oninput="applyAll()">
+                    </div>
+                    <span id="resultCount" style="font-size:0.85rem;color:#6b7280;white-space:nowrap;"></span>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="admin-table">
+                        <thead>
+                            <tr>
+                                <th>Ticket ID</th>
+                                <th>User</th>
+                                <th class="sortable" onclick="localSort('title')">Issue <span class="sort-icon" id="sort-title">↕</span></th>
+                                <th>Category</th>
+                                <th>Ticket Type</th>
+                                <th class="sortable" onclick="localSort('conf')">AI Confidence <span class="sort-icon" id="sort-conf">↕</span></th>
+                                <th>Priority</th>
+                                <th>Status</th>
+                                <th class="sortable" onclick="localSort('date')">Action <span class="sort-icon" id="sort-date">↕</span></th>
+                            </tr>
+                        </thead>
+                        <tbody id="adminTicketTableBody"></tbody>
+                    </table>
+                </div>
+
+            </section>
+        </main>
+    </div>
+
+    <script src="common.js"></script>
+    <script src="theme.js"></script>
+    <script src="admin-dashboard.js"></script>
+    <script>
+        let allTickets     = [];
+        let filtered       = [];
+        let currentStatus  = "all";
+        let localSortState = { col: null, dir: "asc" };
+        // ════════════════════════════════════════════════════════════
+        // HEATMAP
+        // ════════════════════════════════════════════════════════════
+        function toggleHeatmap() {
+            const container = document.getElementById("heatmapContainer");
+            if (!container) return;
+            if (container.style.display === "none") {
+                container.style.display = "block";
+                renderHeatmap(allTickets);
+            } else {
+                container.style.display = "none";
+            }
+        }
+
+        function renderHeatmap(tickets) {
+            const grid = document.getElementById("heatmapGrid");
+            if (!grid) return;
+
+            // Count tickets per hour of day (0-23)
+            const hourCounts = new Array(24).fill(0);
+            tickets.forEach(t => {
+                if (!t.createdAt) return;
+                const h = new Date(t.createdAt).getHours();
+                if (h >= 0 && h <= 23) hourCounts[h]++;
+            });
+
+            const maxCount = Math.max(...hourCounts, 1);
+
+            // Colour scale: 0 → #f1f5f9, max → #1e1b4b
+            const colours = ["#f1f5f9","#e0e7ff","#a5b4fc","#6366f1","#4338ca","#1e1b4b"];
+            function getColour(count) {
+                if (count === 0) return colours[0];
+                const ratio = count / maxCount;
+                if (ratio < 0.2) return colours[1];
+                if (ratio < 0.4) return colours[2];
+                if (ratio < 0.6) return colours[3];
+                if (ratio < 0.8) return colours[4];
+                return colours[5];
+            }
+
+            const labels = ["12am","1am","2am","3am","4am","5am","6am","7am","8am","9am",
+                            "10am","11am","12pm","1pm","2pm","3pm","4pm","5pm","6pm","7pm",
+                            "8pm","9pm","10pm","11pm"];
+
+            grid.innerHTML = hourCounts.map((count, h) => `
+                <div title="${labels[h]}: ${count} ticket${count !== 1 ? "s" : ""}"
+                    style="height:36px; border-radius:4px; background:${getColour(count)};
+                    cursor:default; transition:transform 0.15s; position:relative;"
+                    onmouseover="this.style.transform='scaleY(1.15)';this.style.zIndex='1'"
+                    onmouseout="this.style.transform='';this.style.zIndex=''">
+                    ${count > 0 ? `<div style="position:absolute;bottom:-18px;left:50%;
+                        transform:translateX(-50%);font-size:0.6rem;color:#6b7280;
+                        white-space:nowrap;">${count}</div>` : ""}
+                </div>
+            `).join("");
+        }
+
+        // ════════════════════════════════════════════════════════════
+        // CSV EXPORT
+        // ════════════════════════════════════════════════════════════
+        function exportCSV() {
+            const data = filtered.length > 0 ? filtered : allTickets;
+            if (data.length === 0) { showToast("No tickets to export", "warning"); return; }
+
+            const headers = ["Ticket ID","User","Title","Category","Type","AI Confidence","Priority","Status","Resolution Type","Created Date"];
+            const rows = data.map(t => [
+                t.ticketNumber || t.id,
+                t.user ? t.user.name : "Unknown",
+                '"' + (t.title || "").replace(/"/g, '""') + '"',
+                t.category || "General",
+                t.aiResolutionType === "NON_TECHNICAL" ? "Non-Technical" : "Technical",
+                t.aiConfidence != null ? t.aiConfidence + "%" : "N/A",
+                t.priority || "—",
+                t.status,
+                t.aiResolutionType || "—",
+                t.createdAt ? new Date(t.createdAt).toLocaleDateString("en-IN") : "—"
+            ]);
+
+            const csv = [headers.join(","), ...rows.map(r => r.join(","))].join("\n");
+            const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+            const url  = URL.createObjectURL(blob);
+            const a    = document.createElement("a");
+            a.href     = url;
+            a.download = `ResolviaAI_Tickets_${new Date().toISOString().slice(0,10)}.csv`;
+            a.click();
+            URL.revokeObjectURL(url);
+            showToast(`Exported ${data.length} tickets as CSV`, "success");
+        }
+
+        // ════════════════════════════════════════════════════════════
+        // PDF EXPORT (print-friendly styled page)
+        // ════════════════════════════════════════════════════════════
+        function exportPDF() {
+            const data = filtered.length > 0 ? filtered : allTickets;
+            if (data.length === 0) { showToast("No tickets to export", "warning"); return; }
+
+            const now   = new Date().toLocaleString("en-IN");
+            const rows  = data.map(function(t) {
+                return "<tr>" +
+                    "<td>" + (t.ticketNumber || t.id) + "<\/td>" +
+                    "<td>" + (t.user ? t.user.name : "Unknown") + "<\/td>" +
+                    "<td>" + (t.title || "").substring(0, 50) + ((t.title||"").length > 50 ? "..." : "") + "<\/td>" +
+                    "<td>" + (t.category || "General") + "<\/td>" +
+                    "<td>" + (t.aiConfidence != null ? t.aiConfidence + "%" : "—") + "<\/td>" +
+                    "<td>" + (t.priority || "—") + "<\/td>" +
+                    "<td>" + t.status + "<\/td>" +
+                    "<td>" + (t.createdAt ? new Date(t.createdAt).toLocaleDateString("en-IN") : "—") + "<\/td>" +
+                    "<\/tr>";
+            }).join("");
+
+            const html = "<!DOCTYPE html><html><head>" +
+                "<meta charset='UTF-8'>" +
+                "<title>ResolviaAI - Ticket Report<\/title>" +
+                "<style>" +
+                "body{font-family:Arial,sans-serif;font-size:11px;color:#1f2937;margin:20px}" +
+                "h1{font-size:18px;margin-bottom:4px;color:#1e1b4b}" +
+                "p.meta{font-size:10px;color:#6b7280;margin-bottom:16px}" +
+                "table{width:100%;border-collapse:collapse}" +
+                "th{background:#1e1b4b;color:#fff;padding:7px 8px;text-align:left;font-size:10px;text-transform:uppercase}" +
+                "td{padding:6px 8px;border-bottom:1px solid #e5e7eb}" +
+                "tr:nth-child(even) td{background:#f9fafb}" +
+                "@page{margin:15mm}" +
+                "<\/style>" +
+                "<\/head><body>" +
+                "<h1>ResolviaAI - Ticket Report<\/h1>" +
+                "<p class='meta'>Generated: " + now + " &nbsp;&middot;&nbsp; Total: " + data.length + " tickets<\/p>" +
+                "<table><thead><tr>" +
+                "<th>Ticket ID<\/th><th>User<\/th><th>Title<\/th><th>Category<\/th>" +
+                "<th>AI Confidence<\/th><th>Priority<\/th><th>Status<\/th><th>Date<\/th>" +
+                "<\/tr><\/thead>" +
+                "<tbody>" + rows + "<\/tbody>" +
+                "<\/table>" +
+                "<\/body><\/html>";
+
+            const win = window.open("", "_blank");
+            win.document.write(html);
+            win.document.close();
+            win.onload = () => { win.print(); };
+            showToast(`PDF report opened for ${data.length} tickets`, "success");
+        }
+
+        document.addEventListener("DOMContentLoaded", async () => {
+            await loadAdminProfile();
+            showSpinner("adminTicketTableBody", 9);
+            try {
+                const res = await fetch(`${API_BASE_URL}/admin/tickets`, { headers: getAuthHeaders() });
+                if (!res.ok) { showToast("Failed to load tickets", "error"); return; }
+                allTickets = await res.json();
+
+                // Needs Review badge
+                const inProg = allTickets.filter(t => t.status === "IN_PROGRESS").length;
+                document.querySelectorAll(".needsReviewBadge").forEach(b => {
+                    b.textContent = inProg;
+                    b.style.display = inProg > 0 ? "inline-flex" : "none";
+                });
+
+                filtered = allTickets;
+                renderAdminTable(filtered);
+                updateCount(filtered.length, allTickets.length);
+            } catch (err) {
+                showToast("Server error loading tickets", "error");
+            }
+        });
+
+        function applyFilter(status, btn) {
+            document.querySelectorAll(".filter-btn").forEach(b => b.classList.remove("active"));
+            btn.classList.add("active");
+            currentStatus = status;
+            applyAll();
+        }
+
+        function applyCurrentFilters(tickets) {
+            const q = (document.getElementById("ticketSearch")?.value || "").toLowerCase().trim();
+            let result = currentStatus === "all" ? tickets : tickets.filter(t => t.status === currentStatus);
+            if (q) {
+                result = result.filter(t => {
+                    const user = t.user ? t.user.name.toLowerCase() : "";
+                    return (
+                        (t.ticketNumber || "").toLowerCase().includes(q) ||
+                        (t.title || "").toLowerCase().includes(q)        ||
+                        (t.category || "").toLowerCase().includes(q)     ||
+                        user.includes(q)
+                    );
+                });
+            }
+            return result;
+        }
+
+        function applyAll() {
+            filtered = applyCurrentFilters(allTickets);
+            renderAdminTable(filtered);
+            updateCount(filtered.length, allTickets.length);
+            // Refresh heatmap if visible
+            const hm = document.getElementById("heatmapContainer");
+            if (hm && hm.style.display !== "none") renderHeatmap(filtered);
+        }
+
+        function localSort(col) {
+            if (localSortState.col === col) localSortState.dir = localSortState.dir === "asc" ? "desc" : "asc";
+            else { localSortState.col = col; localSortState.dir = "asc"; }
+            document.querySelectorAll(".sort-icon").forEach(el => el.textContent = "↕");
+            const icon = document.getElementById("sort-" + col);
+            if (icon) icon.textContent = localSortState.dir === "asc" ? "↑" : "↓";
+            const sorted = [...filtered].sort((a, b) => {
+                let va, vb;
+                if      (col === "date")  { va = new Date(a.createdAt);       vb = new Date(b.createdAt); }
+                else if (col === "conf")  { va = a.aiConfidence || 0;          vb = b.aiConfidence || 0; }
+                else if (col === "title") { va = (a.title||"").toLowerCase();   vb = (b.title||"").toLowerCase(); }
+                else { va = 0; vb = 0; }
+                if (va < vb) return localSortState.dir === "asc" ? -1 : 1;
+                if (va > vb) return localSortState.dir === "asc" ?  1 : -1;
+                return 0;
+            });
+            renderAdminTable(sorted);
+        }
+
+        function updateCount(shown, total) {
+            const el = document.getElementById("resultCount");
+            if (el) el.textContent = shown < total ? `Showing ${shown} of ${total}` : `${total} ticket${total !== 1 ? "s" : ""}`;
+        }
+    </script>
+
+    <script>
+    // BATCH 5A: Track admin last-seen for online/offline status
+    (function() {
+        var userId = localStorage.getItem("currentUserId");
+        if (userId && localStorage.getItem("role") === "ADMIN") {
+            localStorage.setItem("adminLastSeen_" + userId, Date.now().toString());
+        }
+    })();
+    </script>
+</body>
+</html>

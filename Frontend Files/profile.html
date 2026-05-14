@@ -1,0 +1,1259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Profile - ResolviaAI</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="dashboard.css">
+    <link rel="stylesheet" href="admin-dashboard.css">
+    <style>
+        .profile-card  { max-width: 680px; margin: 0 auto 2rem; }
+        .profile-avatar-large {
+            width: 80px; height: 80px; border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary) 0%, #3b82f6 100%);
+            color: #fff; display: flex; align-items: center; justify-content: center;
+            font-weight: 700; font-size: 2.2rem; flex-shrink: 0;
+        }
+        .profile-field {
+            padding: 1rem 0; border-bottom: 1px solid var(--border);
+            display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+        }
+        .profile-field:last-child { border-bottom: none; }
+        .profile-label {
+            font-size: 0.82rem; font-weight: 600; text-transform: uppercase;
+            letter-spacing: 0.05em; color: var(--text-muted); min-width: 110px;
+        }
+        .profile-value { font-size: 1rem; font-weight: 500; color: var(--text-main); text-align: right; }
+        .stat-grid {
+            display: grid; grid-template-columns: repeat(3, 1fr);
+            gap: 1rem; max-width: 680px; margin: 0 auto 2rem;
+        }
+        .stat-card {
+            background: var(--surface); border: 1px solid var(--border);
+            border-radius: var(--radius); padding: 1.5rem; text-align: center;
+            box-shadow: var(--shadow-sm);
+        }
+        .stat-number {
+            font-size: 2.2rem; font-weight: 800; color: var(--text-main);
+            line-height: 1; margin-bottom: 0.4rem;
+        }
+        .stat-label {
+            font-size: 0.82rem; font-weight: 600; text-transform: uppercase;
+            letter-spacing: 0.04em; color: var(--text-muted);
+        }
+        .role-badge  { padding: 4px 14px; border-radius: 99px; font-size: 0.8rem; font-weight: 600; }
+        .role-user   { background: #eff6ff; color: #1e40af; border: 1px solid #bfdbfe; }
+        .role-admin  { background: #f5f3ff; color: #5b21b6; border: 1px solid #ddd6fe; }
+ 
+        /* Admin-view banner */
+        .admin-view-banner {
+            max-width: 680px; margin: 0 auto 1.5rem;
+            background: #fef3c7; border: 1px solid #fde68a;
+            border-left: 4px solid #f59e0b; border-radius: 8px;
+            padding: 0.85rem 1.25rem;
+            display: flex; align-items: center; gap: 0.75rem;
+        }
+        .admin-view-banner span { font-size: 0.9rem; color: #92400e; font-weight: 500; }
+ 
+        .ticket-row {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 0.85rem 0; border-bottom: 1px solid var(--border);
+            cursor: pointer; transition: background 0.15s;
+        }
+        .ticket-row:hover { background: #f9fafb; margin: 0 -1rem; padding: 0.85rem 1rem; border-radius: 6px; }
+        .ticket-row:last-child { border-bottom: none; }
+ 
+        @media (max-width: 480px) { .stat-grid { grid-template-columns: 1fr 1fr; } }
+ 
+        /* Profile Picture Styles */
+        .profile-pic-wrapper {
+            position: relative; display: inline-flex;
+            align-items: center; justify-content: center; flex-shrink: 0;
+        }
+        .profile-pic-wrapper img.profile-photo {
+            width: 80px; height: 80px; border-radius: 50%; object-fit: cover;
+            border: 3px solid var(--primary); box-shadow: 0 2px 8px rgba(79,70,229,0.25);
+        }
+        .profile-pic-private {
+            width: 80px; height: 80px; border-radius: 50%;
+            background: #f3f4f6; border: 2px dashed #d1d5db;
+            display: flex; flex-direction: column; align-items: center;
+            justify-content: center; flex-shrink: 0; gap: 4px;
+        }
+        .profile-pic-private svg   { color: #9ca3af; }
+        .profile-pic-private span  { font-size: 0.65rem; color: #9ca3af; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; }
+        .btn-upload-photo {
+            display: inline-flex; align-items: center; gap: 0.4rem;
+            margin-top: 0.75rem; padding: 0.4rem 1rem;
+            border: 1px solid var(--border); border-radius: 7px;
+            font-size: 0.82rem; font-weight: 500; cursor: pointer;
+            background: var(--surface); color: var(--text-main);
+            transition: all 0.2s; font-family: inherit;
+        }
+        .btn-upload-photo:hover { background: #f1f5f9; border-color: #94a3b8; }
+        .btn-remove-photo {
+            display: inline-flex; align-items: center; gap: 0.4rem;
+            margin-top: 0.4rem; padding: 0.3rem 0.8rem;
+            border: 1px solid #fecaca; border-radius: 7px;
+            font-size: 0.78rem; font-weight: 500; cursor: pointer;
+            background: #fee2e2; color: #991b1b;
+            transition: all 0.2s; font-family: inherit;
+        }
+        .btn-remove-photo:hover { background: #fecaca; }
+        .visibility-toggle {
+            display: flex; align-items: center; gap: 0.6rem;
+            margin-top: 0.6rem; cursor: pointer;
+        }
+        .visibility-toggle input[type="checkbox"] {
+            width: 16px; height: 16px; accent-color: var(--primary); cursor: pointer;
+        }
+        .visibility-toggle label {
+            font-size: 0.82rem; color: var(--text-muted); cursor: pointer; user-select: none;
+        }
+ 
+        /* ── MOD 1: Admin-view layout uses admin sidebar shell ── */
+        /* When admin views profile, the page wraps in admin layout */
+        body.admin-profile-view .user-main-wrapper { margin-left: var(--sidebar-width, 240px); }
+    </style>
+</head>
+<body class="dashboard-body" id="profileBody">
+ 
+    <!-- MOD 1: Admin sidebar injected by JS when in admin-view mode -->
+    <div id="adminSidebarShell"></div>
+ 
+    <div class="user-main-wrapper" id="mainWrapper">
+ 
+        <nav class="dashboard-nav" id="mainNav">
+            <!-- Filled by JS based on mode -->
+        </nav>
+ 
+        <main class="dashboard-main" id="mainContent">
+ 
+            <a href="#" class="back-link" id="backLink">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
+                    fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="19" y1="12" x2="5" y2="12"></line>
+                    <polyline points="12 19 5 12 12 5"></polyline>
+                </svg>
+                <span id="backLinkText">Back</span>
+            </a>
+ 
+            <!-- Admin-view banner -->
+            <!-- ACCOUNT BLOCK STATUS BANNER — shown to admin when viewing a blocked user -->
+        <div id="accountBlockBanner" style="display:none; margin-bottom:1rem;
+            padding:0.85rem 1.25rem; border-radius:10px; border-left:4px solid;
+            font-size:0.88rem; font-weight:500; line-height:1.5;"></div>
+ 
+        <!-- TICKET CREATION BLOCKAGE BANNER — shown if user is in punishment block -->
+        <div id="ticketBlockBanner" style="display:none; margin-bottom:1rem;
+            background:rgba(254,242,242,0.8); border:1px solid #fecaca; border-left:4px solid #ef4444;
+            border-radius:10px; padding:0.85rem 1.25rem; font-size:0.85rem; color:#991b1b;
+            font-weight:500;">
+            🚫 <strong>Ticket Creation Blocked</strong> — This user is currently under a 
+            non-technical ticket punishment block.
+        </div>
+ 
+        <div class="admin-view-banner" id="adminViewBanner" style="display:none;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"
+                    fill="none" stroke="#f59e0b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="9" cy="7" r="4"></circle>
+                    <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                    <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                </svg>
+                <span>You are viewing this profile as an <strong>Admin</strong>. This is a read-only view.</span>
+            </div>
+ 
+            <header class="welcome-section">
+                <h1 id="pageTitle">My Profile</h1>
+                <p id="pageSubtitle">Your account information and ticket statistics.</p>
+            </header>
+ 
+            <!-- Profile Card -->
+            <div class="card profile-card">
+                <div style="display:flex; align-items:center; gap:1.25rem;
+                    padding-bottom:1.5rem; border-bottom:1px solid var(--border); margin-bottom:0.5rem;">
+                    <div class="profile-pic-wrapper" id="profilePicWrapper">
+                        <div class="profile-avatar-large" id="profileAvatarLarge">A</div>
+                    </div>
+                    <div>
+                        <div style="font-size:1.4rem; font-weight:700; color:var(--text-main);" id="profileFullName">Loading...</div>
+                        <!-- BATCH 5B: username display -->
+                        <div id="profileUsernameDisplay" style="font-size:0.85rem; color:var(--primary-accent);
+                            font-weight:600; margin-top:1px;">@—</div>
+                        <div style="font-size:0.9rem; color:var(--text-muted); margin-top:0.2rem;" id="profileEmailSub">...</div>
+ 
+                        <!-- Edit Profile toggle button — own profile only -->
+                        <div id="editProfileTrigger" style="display:none; margin-top:0.6rem;">
+                            <button onclick="toggleUserEditPanel()"
+                                style="padding:0.28rem 0.75rem;border-radius:99px;font-size:0.75rem;
+                                border:1px solid var(--border);background:transparent;
+                                color:var(--primary-accent);cursor:pointer;font-family:inherit;
+                                font-weight:600;transition:all 0.2s;"
+                                onmouseover="this.style.background='var(--primary-accent)';this.style.color='#fff'"
+                                onmouseout="this.style.background='transparent';this.style.color='var(--primary-accent)'">
+                                ✏️ Edit Profile
+                            </button>
+                        </div>
+ 
+                        <!-- BATCH 5B: Name & username edit panel — HIDDEN by default -->
+                        <div id="nameEditControls" style="display:none; margin-top:0.85rem;
+                            flex-direction:column; gap:0.5rem; background:var(--surface,#f8fafc);
+                            border:1px solid var(--border); border-radius:10px; padding:1rem;">
+ 
+                            <div style="font-size:0.78rem;font-weight:700;color:#6b7280;
+                                text-transform:uppercase;letter-spacing:0.06em;margin-bottom:0.2rem;">
+                                Edit Name
+                                <span style="font-size:0.7rem;font-weight:400;color:#9ca3af;
+                                    text-transform:none;letter-spacing:0;"> — once every 14 days</span>
+                            </div>
+                            <div style="display:flex; gap:0.5rem; align-items:center; flex-wrap:wrap;">
+                                <input id="nameEditInput" type="text" placeholder="Enter new name (no emojis)"
+                                    oninput="stripEmojisFromInput(this)"
+                                    style="padding:0.4rem 0.7rem; border:1px solid var(--border);
+                                    border-radius:8px; font-size:0.88rem; font-family:inherit;
+                                    background:var(--background); color:var(--text-main); flex:1; min-width:0;">
+                                <button onclick="submitNameChange()"
+                                    style="padding:0.38rem 0.9rem; border-radius:8px; border:none;
+                                    background:var(--primary-accent); color:#fff; font-size:0.82rem;
+                                    font-weight:600; cursor:pointer; font-family:inherit; white-space:nowrap;">
+                                    Save Name</button>
+                            </div>
+                            <div id="nameCooldownHint" style="font-size:0.73rem; color:#6b7280;"></div>
+ 
+                            <div style="height:1px;background:var(--border);margin:0.2rem 0;"></div>
+ 
+                            <div style="font-size:0.78rem;font-weight:700;color:#6b7280;
+                                text-transform:uppercase;letter-spacing:0.06em;margin-bottom:0.2rem;">
+                                Change Username
+                                <span style="font-size:0.7rem;font-weight:400;color:#9ca3af;
+                                    text-transform:none;letter-spacing:0;">
+                                    — max 2/year · lowercase, numbers, underscores only</span>
+                            </div>
+                            <div style="display:flex; gap:0.5rem; align-items:center; flex-wrap:wrap;">
+                                <input id="usernameEditInput" type="text"
+                                    placeholder="new_username (a-z, 0-9, _)"
+                                    oninput="validateUserUsernameInput(this)"
+                                    style="padding:0.4rem 0.7rem; border:1px solid var(--border);
+                                    border-radius:8px; font-size:0.88rem; font-family:inherit;
+                                    background:var(--background); color:var(--text-main); flex:1; min-width:0;">
+                                <button onclick="submitUsernameChange()"
+                                    style="padding:0.38rem 0.9rem; border-radius:8px; border:none;
+                                    background:#6366f1; color:#fff; font-size:0.82rem;
+                                    font-weight:600; cursor:pointer; font-family:inherit; white-space:nowrap;">
+                                    @Save</button>
+                            </div>
+                            <div id="usernameChangesLeft" style="font-size:0.73rem; color:#6b7280;"></div>
+ 
+                            <button onclick="toggleUserEditPanel()"
+                                style="align-self:flex-start;padding:0.28rem 0.75rem;border-radius:99px;
+                                font-size:0.75rem;border:1px solid var(--border);background:transparent;
+                                color:#6b7280;cursor:pointer;font-family:inherit;margin-top:0.2rem;">
+                                ✕ Close
+                            </button>
+                        </div>
+ 
+                        <!-- Upload controls — own profile only -->
+                        <div id="picUploadControls" style="display:none;">
+                            <input type="file" id="picFileInput" accept="image/*"
+                                style="display:none;" onchange="handlePhotoUpload(this)">
+                            <button class="btn-upload-photo" onclick="document.getElementById('picFileInput').click()">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24"
+                                    fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                                    <polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
+                                </svg>
+                                Upload Photo
+                            </button>
+                            <button class="btn-remove-photo" id="btnRemovePhoto"
+                                style="display:none;" onclick="handleRemovePhoto()">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24"
+                                    fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <polyline points="3 6 5 6 21 6"/>
+                                    <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+                                </svg>
+                                Remove
+                            </button>
+                            <div class="visibility-toggle">
+                                <input type="checkbox" id="picVisibilityToggle"
+                                    onchange="handleVisibilityChange(this.checked)">
+                                <label for="picVisibilityToggle">Show profile picture to Admins</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="profile-field">
+                    <span class="profile-label">Full Name</span>
+                    <span class="profile-value" id="profileName">—</span>
+                </div>
+                <div class="profile-field">
+                    <span class="profile-label">Email</span>
+                    <span class="profile-value" id="profileEmail">—</span>
+                </div>
+                <div class="profile-field">
+                    <span class="profile-label">Role</span>
+                    <span class="profile-value" id="profileRole">—</span>
+                </div>
+                <div class="profile-field">
+                    <span class="profile-label">Member Since</span>
+                    <span class="profile-value" id="profileSince">—</span>
+                </div>
+            </div>
+ 
+            <!-- Ticket Stats -->
+            <h2 style="max-width:680px; margin:0 auto 1rem; font-size:1.2rem; font-weight:600; color:var(--text-main);"
+                id="statsHeading">My Ticket Summary</h2>
+ 
+            <div class="stat-grid">
+                <div class="stat-card">
+                    <div class="stat-number" id="statTotal"    style="color:#4f46e5;">0</div>
+                    <div class="stat-label">Total Submitted</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="statResolved" style="color:#16a34a;">0</div>
+                    <div class="stat-label">Resolved</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="statPending"  style="color:#f59e0b;">0</div>
+                    <div class="stat-label">Pending / Open</div>
+                </div>
+            </div>
+ 
+            <!-- Recent Tickets -->
+            <div class="card profile-card">
+                <div class="card-header" style="border-bottom:1px solid var(--border); padding-bottom:1rem; margin-bottom:0;">
+                    <h2 style="font-size:1.1rem; margin:0;" id="ticketsHeading">Recent Tickets</h2>
+                </div>
+                <div id="profileTicketList" style="padding-top:0.5rem;">
+                    <div style="text-align:center; padding:2rem; color:var(--text-muted);">Loading...</div>
+                </div>
+            </div>
+ 
+            <!-- ADMIN BLOCK / DELETE PANEL — only visible in admin view -->
+            <div class="card profile-card" id="adminBlockPanel" style="display:none; padding:1.5rem;">
+ 
+                <h3 style="font-size:1rem; font-weight:700; color:var(--text-color,#1f2937);
+                    margin:0 0 0.5rem; padding-bottom:0.75rem; border-bottom:1px solid var(--border,#e5e7eb);">
+                    🚫 User Account Controls
+                </h3>
+                <p style="font-size:0.82rem; color:#6b7280; margin:0 0 1.25rem; line-height:1.5;">
+                    Admin-level control. All block/delete actions require a written reason.
+                    Only admins can see this panel.
+                </p>
+ 
+                <!-- Current status badge -->
+                <div id="profileBlockStatusBanner" style="display:none; margin-bottom:1rem;
+                    padding:0.65rem 1rem; border-radius:8px; font-size:0.85rem; font-weight:600;
+                    line-height:1.4;"></div>
+ 
+                <div style="margin-bottom:0.85rem;">
+                    <label style="font-size:0.78rem; font-weight:700; text-transform:uppercase;
+                        letter-spacing:0.06em; color:#6b7280; display:block; margin-bottom:0.35rem;">
+                        Reason (required for all actions)
+                    </label>
+                    <textarea id="profileBlockReason" rows="2" style="width:100%; padding:0.6rem 0.8rem;
+                        border:1px solid var(--border,#e5e7eb); border-radius:8px; font-size:0.88rem;
+                        font-family:inherit; resize:vertical; background:var(--background,#f8fafc);
+                        color:var(--text-main,#1f2937); box-sizing:border-box;"
+                        placeholder="e.g. Repeated abuse of support system, spam tickets..."></textarea>
+                </div>
+ 
+                <div style="margin-bottom:1rem;" id="blockDurationRow">
+                    <label style="font-size:0.78rem; font-weight:700; text-transform:uppercase;
+                        letter-spacing:0.06em; color:#6b7280; display:block; margin-bottom:0.35rem;">
+                        Temporary Block Duration
+                    </label>
+                    <select id="profileBlockHours" style="width:100%; padding:0.5rem 0.8rem;
+                        border:1px solid var(--border,#e5e7eb); border-radius:8px; font-size:0.88rem;
+                        font-family:inherit; background:var(--background,#f8fafc); color:var(--text-main,#1f2937);">
+                        <option value="24">24 hours</option>
+                        <option value="48">48 hours</option>
+                        <option value="72">72 hours (3 days)</option>
+                        <option value="168">1 week (168 hours)</option>
+                        <option value="720">30 days (720 hours)</option>
+                    </select>
+                </div>
+ 
+                <div style="display:flex; flex-direction:column; gap:0.5rem;" id="blockActionBtns">
+                    <!-- Buttons rendered dynamically based on current status -->
+                </div>
+ 
+                <!-- Inline restore confirmation (shown instead of browser confirm()) -->
+                <div id="restoreConfirmPanel" style="display:none; margin-top:0.75rem;
+                    background:#f0fdf4; border:1px solid #bbf7d0; border-left:4px solid #16a34a;
+                    border-radius:10px; padding:1rem 1.25rem;">
+                    <div style="font-size:0.88rem; font-weight:600; color:#065f46; margin-bottom:0.5rem;">
+                        ↩ Restore this account to ACTIVE?
+                    </div>
+                    <div style="font-size:0.82rem; color:#166534; margin-bottom:0.85rem; line-height:1.5;">
+                        The user will be able to log in again immediately.
+                        All previous block information will be cleared.
+                    </div>
+                    <div style="display:flex; gap:0.6rem;">
+                        <button onclick="confirmRestoreAccount()" id="restoreConfirmBtn"
+                            style="flex:1; padding:0.5rem; border-radius:7px; border:none;
+                            background:#16a34a; color:#fff; font-size:0.85rem; font-weight:700;
+                            cursor:pointer; font-family:inherit; transition:opacity 0.2s;"
+                            onmouseover="this.style.opacity=0.85" onmouseout="this.style.opacity=1">
+                            ✓ Yes, Restore Account
+                        </button>
+                        <button onclick="cancelRestoreAccount()"
+                            style="padding:0.5rem 1rem; border-radius:7px; border:1px solid #bbf7d0;
+                            background:transparent; color:#166534; font-size:0.85rem; font-weight:600;
+                            cursor:pointer; font-family:inherit;">
+                            Cancel
+                        </button>
+                    </div>
+                </div>
+ 
+            </div>
+ 
+        </main>
+    </div>
+ 
+    <script src="common.js"></script>
+    <script src="theme.js"></script>
+    <script src="dashboard.js"></script>
+    <script>
+        const params       = new URLSearchParams(window.location.search);
+        const targetUserId = params.get("userId");
+        const role         = localStorage.getItem("role");
+        const isAdminView  = targetUserId && role === "ADMIN";
+ 
+        document.addEventListener("DOMContentLoaded", async () => {
+            buildNav();
+            if (isAdminView) {
+                await loadAdminViewOfUser(targetUserId);
+            } else {
+                await loadOwnProfile();
+            }
+        });
+ 
+        // ── MOD 1: Build correct nav + inject admin sidebar when in admin-view ──
+        function buildNav() {
+            const nav = document.getElementById("mainNav");
+ 
+            if (isAdminView) {
+                // ── Inject full admin sidebar (MOD 1 fix) ──────────────────────
+                const sidebarShell = document.getElementById("adminSidebarShell");
+                if (sidebarShell) {
+                    sidebarShell.innerHTML = `
+                        <aside class="sidebar">
+                            <div class="sidebar-header"><h2>ResolviaAI</h2></div>
+                            <ul class="sidebar-menu">
+                                <li><a href="admin-dashboard.html">Dashboard</a></li>
+                                <li><a href="ticket-management.html" class="active">Ticket Management</a></li>
+                                <li><a href="ai-decision-panel.html">AI Decision Panel</a></li>
+                                <li style="margin-top:auto; padding-top:1rem; border-top:1px solid rgba(255,255,255,0.1);">
+                                    <a href="admin-profile.html">My Profile</a>
+                                </li>
+                                <li><a href="admin-settings.html">Settings</a></li>
+                            </ul>
+                        </aside>
+                    `;
+                }
+                // Offset the main wrapper for sidebar
+                const wrapper = document.getElementById("mainWrapper");
+                if (wrapper) wrapper.style.marginLeft = "240px";
+ 
+                // Admin top nav
+                nav.innerHTML = `
+                    <div class="nav-title" style="font-size:1rem; font-weight:600; color:var(--text-main);">User Profile (Admin View)</div>
+                    <div class="nav-right">
+                        <div class="user-profile">
+                            <div class="avatar-circle" id="adminAvatar" style="width:36px;height:36px;border-radius:50%;
+                                background:var(--primary-accent,#4F46E5);color:#fff;display:flex;
+                                align-items:center;justify-content:center;font-weight:600;">A</div>
+                            <span style="font-weight:500; font-size:0.9rem;" id="adminNavName">Admin</span>
+                        </div>
+                        <button class="btn-logout" onclick="handleLogout()">Logout</button>
+                    </div>
+                `;
+                // Load admin name for nav
+                fetch(`${API_BASE_URL}/user/profile`, { headers: getAuthHeaders() })
+                    .then(r => r.json())
+                    .then(u => {
+                        const el = document.getElementById("adminNavName");
+                        if (el) el.innerText = "Admin: " + u.name;
+                        const av = document.getElementById("adminAvatar");
+                        if (av) {
+                            const pic = u.id ? localStorage.getItem("profilePic_admin_" + u.id) : null;
+                            if (pic) { av.innerHTML = `<img src="${pic}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">`; av.style.padding="0"; }
+                            else av.innerText = u.name.charAt(0).toUpperCase();
+                        }
+                    }).catch(() => {});
+ 
+                // Back link
+                document.getElementById("backLink").href           = "javascript:history.back()";
+                document.getElementById("backLinkText").innerText  = "Back to Ticket Management";
+                document.getElementById("adminViewBanner").style.display = "flex";
+ 
+            } else {
+                // ── User own-profile nav ──────────────────────────────────────
+                nav.innerHTML = `
+                    <span class="nav-page-title">My Profile</span>
+                    <div class="nav-right">
+                        <div class="user-profile">
+                            <div class="avatar" id="userAvatar">A</div>
+                            <div class="user-info">
+                                <span class="user-name"  id="userNameText">User</span>
+                                <span class="user-email" id="userEmailText">user@email.com</span>
+                            </div>
+                        </div>
+                        <button class="btn-logout" onclick="handleLogout()">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
+                                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                                <polyline points="16 17 21 12 16 7"></polyline>
+                                <line x1="21" y1="12" x2="9" y2="12"></line>
+                            </svg>
+                            <span>Logout</span>
+                        </button>
+                    </div>
+                `;
+                document.getElementById("backLink").href          = "dashboard.html";
+                document.getElementById("backLinkText").innerText = "Back to Dashboard";
+            }
+        }
+ 
+        // ── MODE 1: User viewing own profile ──────────────────────────────────
+        async function loadOwnProfile() {
+            try {
+                const [profileRes, ticketsRes] = await Promise.all([
+                    fetch(`${API_BASE_URL}/user/profile`, { headers: getAuthHeaders() }),
+                    fetch(`${API_BASE_URL}/tickets/my`,   { headers: getAuthHeaders() })
+                ]);
+                if (!profileRes.ok) { handleLogout(); return; }
+                const user    = await profileRes.json();
+                const tickets = await ticketsRes.json();
+ 
+                const setEl = (id, val) => { const el=document.getElementById(id); if(el) el.innerText=val; };
+                setEl("userNameText",  user.name);
+                setEl("userEmailText", user.email);
+                const av = document.getElementById("userAvatar");
+                if (av) av.innerText = user.name.charAt(0).toUpperCase();
+ 
+                populateProfile(user.name, user.email, user.role, user.createdAt, user.id, false, user.username);
+ 
+                const resolved = tickets.filter(t => t.status === "RESOLVED").length;
+                const pending  = tickets.filter(t => t.status === "OPEN" || t.status === "IN_PROGRESS").length;
+                populateStats(tickets.length, resolved, pending);
+ 
+                setEl("pageTitle",      "My Profile");
+                setEl("statsHeading",   "My Ticket Summary");
+                setEl("ticketsHeading", "Recent Tickets");
+                renderTicketList(tickets, false);
+ 
+            } catch (err) {
+                console.error(err);
+                showToast("Failed to load profile", "error");
+            }
+        }
+ 
+        // ── MODE 2: Admin viewing another user's profile ──────────────────────
+        async function loadAdminViewOfUser(userId) {
+            try {
+                const res = await fetch(`${API_BASE_URL}/admin/users/${userId}`, {
+                    headers: getAuthHeaders()
+                });
+                if (!res.ok) {
+                    const err = await res.json();
+                    showToast(err.message || "User not found", "error");
+                    setTimeout(() => history.back(), 1500);
+                    return;
+                }
+                const data = await res.json();
+                populateProfile(data.name, data.email, data.role, data.createdAt, data.id, true, data.username);
+                populateStats(data.totalTickets, data.resolvedTickets, data.pendingTickets);
+ 
+                const setEl = (id, val) => { const el=document.getElementById(id); if(el) el.innerText=val; };
+                setEl("pageTitle",      data.name + "'s Profile");
+                setEl("pageSubtitle",   "Viewing user profile as Admin — read-only.");
+                setEl("statsHeading",   data.name + "'s Ticket Summary");
+                setEl("ticketsHeading", "Recent Tickets by " + data.name);
+                renderTicketList(data.recentTickets, true);
+ 
+                // ── Show account block status banner ──────────────────────
+                const blockBanner = document.getElementById("accountBlockBanner");
+                if (blockBanner && data.accountStatus && data.accountStatus !== "ACTIVE") {
+                    const cfg = {
+                        TEMPORARY: {
+                            bg:"#fef3c7", border:"#f59e0b", color:"#92400e",
+                            msg: `⏱ <strong>Temporarily Blocked</strong> — This account is blocked until 
+                                <strong>${data.blockExpiresAt ? new Date(data.blockExpiresAt)
+                                    .toLocaleString("en-IN") : "unknown"}</strong>.
+                                ${data.blockReason ? `<br>Reason: <em>${data.blockReason}</em>` : ""}
+                                ${data.blockedByAdminName ? `<br>Blocked by: Admin ${data.blockedByAdminName}` : ""}`
+                        },
+                        PERMANENT: {
+                            bg:"#fee2e2", border:"#ef4444", color:"#991b1b",
+                            msg: `🔒 <strong>Permanently Blocked</strong> — This account has been permanently blocked.
+                                ${data.blockReason ? `<br>Reason: <em>${data.blockReason}</em>` : ""}
+                                ${data.blockedByAdminName ? `<br>Blocked by: Admin ${data.blockedByAdminName}` : ""}`
+                        },
+                        DELETED: {
+                            bg:"#f9fafb", border:"#9ca3af", color:"#374151",
+                            msg: `🗑 <strong>Account Deleted</strong> — This account has been permanently deleted.
+                                ${data.blockReason ? `<br>Reason: <em>${data.blockReason}</em>` : ""}
+                                ${data.blockedByAdminName ? `<br>Deleted by: Admin ${data.blockedByAdminName}` : ""}`
+                        }
+                    };
+                    const c = cfg[data.accountStatus];
+                    if (c) {
+                        blockBanner.style.display         = "block";
+                        blockBanner.style.background      = c.bg;
+                        blockBanner.style.borderLeftColor = c.border;
+                        blockBanner.style.color           = c.color;
+                        blockBanner.innerHTML             = c.msg;
+                    }
+                }
+ 
+                // ── Show ticket creation blockage (punishment system) ──────
+                // Read from localStorage: ntBlockUntil_<userId>
+                const blockKey   = "ntBlockUntil_" + data.id;
+                const blockUntil = localStorage.getItem(blockKey);
+                if (blockUntil && new Date(blockUntil) > new Date()) {
+                    const tb = document.getElementById("ticketBlockBanner");
+                    if (tb) {
+                        tb.style.display = "block";
+                        const expires = new Date(blockUntil);
+                        tb.innerHTML = `🚫 <strong>Ticket Creation Blocked (Non-Tech Punishment)</strong> — 
+                            This user is blocked from creating tickets until 
+                            <strong>${expires.toLocaleString("en-IN")}</strong>.`;
+                    }
+                }
+ 
+                // ── Init admin block panel ─────────────────────────────
+                renderAdminBlockPanel(data.id, data.accountStatus, data.blockExpiresAt,
+                    data.blockReason, data.blockedByAdminName);
+ 
+            } catch (err) {
+                console.error(err);
+                showToast("Failed to load user profile", "error");
+            }
+        }
+ 
+        // ── Shared: populate profile card ────────────────────────────────────
+        function populateProfile(name, email, role, createdAt, userId, viewerIsAdmin, username) {
+            const setEl = (id, val) => { const el=document.getElementById(id); if(el) el.innerText=val; };
+            setEl("profileFullName", name);
+            setEl("profileEmailSub", email);
+            setEl("profileName",     name);
+            setEl("profileEmail",    email);
+            setEl("profileSince",    formatDate(createdAt));
+            // BATCH 5B: username display
+            const unEl = document.getElementById("profileUsernameDisplay");
+            if (unEl) unEl.textContent = username ? "@" + username : "@—";
+            renderProfileAvatar(name, userId, viewerIsAdmin);
+            const roleEl = document.getElementById("profileRole");
+            if (roleEl) {
+                const isAdmin = role === "ADMIN";
+                roleEl.innerHTML = `<span class="role-badge ${isAdmin ? 'role-admin' : 'role-user'}">${isAdmin ? 'Administrator' : 'User'}</span>`;
+            }
+        }
+ 
+        function populateStats(total, resolved, pending) {
+            const setEl = (id, val) => { const el=document.getElementById(id); if(el) el.innerText=val; };
+            setEl("statTotal",    total);
+            setEl("statResolved", resolved);
+            setEl("statPending",  pending);
+        }
+ 
+        function renderTicketList(tickets, adminMode) {
+            const listEl = document.getElementById("profileTicketList");
+            if (!listEl) return;
+            if (!tickets || tickets.length === 0) {
+                listEl.innerHTML = `
+                    <div style="text-align:center; padding:1.5rem; color:var(--text-muted);">
+                        No tickets yet.
+                        ${!adminMode ? '<a href="create-ticket.html" style="color:var(--primary);">Create your first ticket</a>' : ''}
+                    </div>`;
+                return;
+            }
+            const recent = [...tickets].slice(0, 5);
+            listEl.innerHTML = recent.map(t => {
+                const statusColor = t.status === "RESOLVED" ? "#16a34a" : "#f59e0b";
+                const statusBg    = t.status === "RESOLVED" ? "#dcfce7" : "#fef3c7";
+                const statusText  = t.status === "RESOLVED" ? "Resolved"
+                                  : t.status === "IN_PROGRESS" ? "In Progress" : "Open";
+                const clickAttr   = !adminMode
+                    ? `onclick="viewTicket(${t.id},'${t.status}')" style="cursor:pointer;"`
+                    : `style="cursor:default;"`;
+                return `
+                    <div class="ticket-row" ${clickAttr}>
+                        <div>
+                            <div style="font-weight:500; font-size:0.95rem; color:var(--text-main); margin-bottom:2px;">${t.title}</div>
+                            <div style="font-size:0.8rem; color:var(--text-muted);">
+                                ${t.ticketNumber || "#"+t.id} &middot; ${formatDate(t.createdAt)} &middot; ${t.category || "General"}
+                                ${t.priority ? `&middot; <span style="font-weight:600;">${t.priority.charAt(0)+t.priority.slice(1).toLowerCase()} priority</span>` : ""}
+                            </div>
+                        </div>
+                        <span style="font-size:0.78rem; font-weight:600; color:${statusColor};
+                            background:${statusBg}; padding:3px 10px; border-radius:99px;
+                            white-space:nowrap; margin-left:1rem; flex-shrink:0;">
+                            ${statusText}
+                        </span>
+                    </div>`;
+            }).join("");
+            if (!adminMode && tickets.length > 5) {
+                listEl.innerHTML += `
+                    <div style="text-align:center; padding:1rem;">
+                        <a href="dashboard.html" style="font-size:0.9rem; color:var(--primary); font-weight:500;">
+                            View all ${tickets.length} tickets →
+                        </a>
+                    </div>`;
+            }
+        }
+ 
+        // ── Profile Picture Feature ──────────────────────────────────────────
+        let _currentUserId = null;
+ 
+        function renderProfileAvatar(name, userId, viewerIsAdmin) {
+            _currentUserId  = userId;
+            const wrapper   = document.getElementById("profilePicWrapper");
+            if (!wrapper) return;
+            const storedPic     = userId ? localStorage.getItem("profilePic_" + userId)     : null;
+            const visibleToAdmin = userId ? localStorage.getItem("profilePicVisible_" + userId) : null;
+ 
+            if (viewerIsAdmin) {
+                if (storedPic && visibleToAdmin === "true") {
+                    wrapper.innerHTML = `<img src="${storedPic}" class="profile-photo" alt="Profile Photo">`;
+                } else if (storedPic && visibleToAdmin !== "true") {
+                    wrapper.innerHTML = `
+                        <div class="profile-pic-private">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+                                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                                <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                            </svg>
+                            <span>Private</span>
+                        </div>`;
+                } else {
+                    wrapper.innerHTML = `<div class="profile-avatar-large">${name.charAt(0).toUpperCase()}</div>`;
+                }
+                const ctrl = document.getElementById("picUploadControls");
+                if (ctrl) ctrl.style.display = "none";
+            } else {
+                if (storedPic) {
+                    wrapper.innerHTML = `<img src="${storedPic}" class="profile-photo" alt="Profile Photo">`;
+                    const removeBtn = document.getElementById("btnRemovePhoto");
+                    if (removeBtn) removeBtn.style.display = "inline-flex";
+                } else {
+                    wrapper.innerHTML = `<div class="profile-avatar-large">${name.charAt(0).toUpperCase()}</div>`;
+                    const removeBtn = document.getElementById("btnRemovePhoto");
+                    if (removeBtn) removeBtn.style.display = "none";
+                }
+                const ctrl = document.getElementById("picUploadControls");
+                if (ctrl) ctrl.style.display = "block";
+                // BATCH 5B: show name/username edit controls on own profile
+                const editCtrl = document.getElementById("nameEditControls");
+                if (editCtrl) editCtrl.style.display = "flex"; // keep panel hidden, show trigger
+                const editTrigger = document.getElementById("editProfileTrigger");
+                if (editTrigger) editTrigger.style.display = "block";
+                const toggle = document.getElementById("picVisibilityToggle");
+                if (toggle) toggle.checked = visibleToAdmin === "true";
+                updateNavAvatar(userId);
+            }
+        }
+ 
+        function handlePhotoUpload(input) {
+            const file = input.files[0];
+            if (!file) return;
+            if (file.size > 2 * 1024 * 1024) {
+                showToast("Image must be under 2MB. Please choose a smaller photo.", "warning");
+                input.value = ""; return;
+            }
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const base64 = e.target.result;
+                if (!_currentUserId) { showToast("Unable to save photo. Please refresh.", "error"); return; }
+                localStorage.setItem("profilePic_" + _currentUserId, base64);
+                const name = document.getElementById("profileFullName").innerText || "U";
+                renderProfileAvatar(name, _currentUserId, false);
+                showToast("Profile photo uploaded successfully!", "success");
+            };
+            reader.readAsDataURL(file);
+            input.value = "";
+        }
+ 
+        function handleRemovePhoto() {
+            if (!_currentUserId) return;
+            showConfirm("Are you sure you want to remove your profile photo?", () => {
+                localStorage.removeItem("profilePic_" + _currentUserId);
+                localStorage.removeItem("profilePicVisible_" + _currentUserId);
+                const name = document.getElementById("profileFullName").innerText || "U";
+                renderProfileAvatar(name, _currentUserId, false);
+                updateNavAvatar(_currentUserId);
+                showToast("Profile photo removed.", "info");
+            }, "Remove Photo", "#ef4444");
+        }
+ 
+        function handleVisibilityChange(isChecked) {
+            if (!_currentUserId) return;
+            localStorage.setItem("profilePicVisible_" + _currentUserId, isChecked ? "true" : "false");
+            showToast(isChecked ? "Profile photo is now visible to Admins." : "Profile photo is now hidden from Admins.", "info");
+        }
+ 
+        function updateNavAvatar(userId) {
+            if (!userId) return;
+            const storedPic = localStorage.getItem("profilePic_" + userId);
+            const navAv = document.getElementById("userAvatar");
+            if (navAv && storedPic) {
+                navAv.innerHTML = `<img src="${storedPic}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;" alt="avatar">`;
+                navAv.style.padding = "0";
+            }
+        }
+    </script>
+ 
+    <script>
+    // ══════════════════════════════════════════════════════════════════════
+    async function submitNameChange() {
+        const input = document.getElementById("nameEditInput");
+        const hint  = document.getElementById("nameCooldownHint");
+        const newName = input ? input.value.trim() : "";
+        if (!newName) { showToast("Please enter a new name.", "warning"); return; }
+ 
+        try {
+            const res = await fetch(API_BASE_URL + "/user/profile/name", {
+                method: "PATCH",
+                headers: getAuthHeaders(),
+                body: JSON.stringify({ name: newName })
+            });
+            let data;
+            try { data = await res.json(); } catch(e) { data = {}; }
+            if (!res.ok) {
+                const msg = data.message || "Failed to update name.";
+                if (hint) { hint.textContent = msg; hint.style.color = "#ef4444"; }
+                showToast(msg, "error");
+                return;
+            }
+            showToast("Name updated successfully!", "success");
+            document.getElementById("profileFullName").textContent = data.name;
+            const navName = document.getElementById("userNameText");
+            if (navName) navName.textContent = data.name;
+            if (input) input.value = "";
+            if (hint)  { hint.textContent = "✓ Updated. Next change available in 14 days."; hint.style.color = "#10b981"; }
+        } catch(e) { showToast("Server error", "error"); }
+    }
+ 
+    async function submitUsernameChange() {
+        const input = document.getElementById("usernameEditInput");
+        const left  = document.getElementById("usernameChangesLeft");
+        const raw   = input ? input.value.toLowerCase().trim() : "";
+        if (!raw) { showToast("Please enter a new username.", "warning"); return; }
+        if (!/^[a-z0-9_]{3,20}$/.test(raw)) {
+            showToast("Username: 3-20 chars, lowercase letters, numbers, underscores only.", "warning");
+            return;
+        }
+        try {
+            const res = await fetch(API_BASE_URL + "/user/profile/username", {
+                method: "PATCH",
+                headers: getAuthHeaders(),
+                body: JSON.stringify({ username: raw })
+            });
+            let data;
+            try { data = await res.json(); } catch(e) { data = {}; }
+            if (!res.ok) {
+                const msg = data.message || "Failed to update username.";
+                showToast(msg, "error");
+                if (left) { left.textContent = msg; left.style.color = "#ef4444"; }
+                return;
+            }
+            showToast("Username updated! @" + data.username, "success");
+            const unEl = document.getElementById("profileUsernameDisplay");
+            if (unEl) unEl.textContent = "@" + data.username;
+            if (left) { left.textContent = "✓ " + data.changesRemaining + " change(s) remaining this year"; left.style.color = "#10b981"; }
+            if (input) input.value = "";
+        } catch(e) { showToast("Server error", "error"); }
+    }
+ 
+    function validateUserUsernameInput(input) {
+        const left = document.getElementById("usernameChangesLeft");
+        const val  = input.value.toLowerCase().replace(/[^a-z0-9_]/g, "");
+        input.value = val; // strip invalid chars live
+        if (!left) return;
+        if      (val.length === 0) left.textContent = "";
+        else if (val.length < 3)   left.textContent = "⚠ Too short — minimum 3 characters";
+        else if (val.length > 20)  left.textContent = "⚠ Too long — maximum 20 characters";
+        else                       left.textContent = "✓ Valid format";
+        left.style.color = (val.length >= 3 && val.length <= 20) ? "#10b981" : "#f59e0b";
+    }
+ 
+    function stripEmojisFromInput(input) {
+        // Remove emoji and non-printable characters from name fields
+        const cleaned = input.value.replace(/[^-~ -ɏḀ-ỿ ]/g, '').trimStart();
+        if (cleaned !== input.value) {
+            input.value = cleaned;
+            input.style.borderColor = "#f59e0b";
+            setTimeout(() => { input.style.borderColor = ""; }, 1500);
+        }
+    }
+ 
+    function toggleUserEditPanel() {
+        const panel   = document.getElementById("nameEditControls");
+        const trigger = document.getElementById("editProfileTrigger");
+        if (!panel) return;
+        const isVisible = panel.style.display === "flex";
+        panel.style.display = isVisible ? "none" : "flex";
+        if (!isVisible) {
+            const currentName = document.getElementById("profileFullName").textContent;
+            const nameInput   = document.getElementById("nameEditInput");
+            if (nameInput && currentName && currentName !== "Loading...")
+                nameInput.value = currentName;
+            nameInput && nameInput.focus();
+        }
+    }
+ 
+    // ADMIN BLOCK / DELETE USER — profile.html
+    // Requires common.js (API_BASE_URL, getAuthHeaders, showToast) to be loaded first
+    // ══════════════════════════════════════════════════════════════════════
+    var _profileUserId = null;
+    var _pendingAction = null;
+    var _pendingHours  = null;
+    var _pendingReason = null;
+ 
+    function renderAdminBlockPanel(userId, status, blockExpiresAt, blockReason, blockedByName) {
+        _profileUserId = userId;
+ 
+        var panel = document.getElementById("adminBlockPanel");
+        if (!panel) return;
+        panel.style.display = "block";
+ 
+        var statusBanner  = document.getElementById("profileBlockStatusBanner");
+        var btnsContainer = document.getElementById("blockActionBtns");
+        var durationRow   = document.getElementById("blockDurationRow");
+ 
+        // ── Status banner ────────────────────────────────────────────────
+        var statusCfg = {
+            TEMPORARY: {
+                bg:"#fef3c7", border:"#f59e0b", color:"#92400e",
+                text: "⏱ Currently Temporarily Blocked" +
+                      (blockExpiresAt ? " · expires " + new Date(blockExpiresAt).toLocaleString("en-IN") : "") +
+                      (blockReason ? "<br><span style='font-weight:400;'>Reason: " + blockReason + "</span>" : "")
+            },
+            PERMANENT: {
+                bg:"#fee2e2", border:"#ef4444", color:"#991b1b",
+                text: "🔒 Permanently Blocked" +
+                      (blockReason ? "<br><span style='font-weight:400;'>Reason: " + blockReason + "</span>" : "")
+            },
+            DELETED: {
+                bg:"#f1f5f9", border:"#9ca3af", color:"#374151",
+                text: "🗑 Account Deleted" +
+                      (blockReason ? "<br><span style='font-weight:400;'>Reason: " + blockReason + "</span>" : "")
+            }
+        };
+ 
+        if (status && status !== "ACTIVE" && statusBanner) {
+            var c = statusCfg[status];
+            if (c) {
+                statusBanner.style.display      = "block";
+                statusBanner.style.background   = c.bg;
+                statusBanner.style.borderLeft   = "4px solid " + c.border;
+                statusBanner.style.color        = c.color;
+                statusBanner.style.padding      = "0.65rem 1rem";
+                statusBanner.style.borderRadius = "8px";
+                statusBanner.innerHTML          = c.text;
+            }
+        } else if (statusBanner) {
+            statusBanner.style.display = "none";
+        }
+ 
+        if (!btnsContainer) return;
+        btnsContainer.innerHTML = "";
+ 
+        // ── Deleted — show restore option ──────────────────────────────────
+        if (status === "DELETED") {
+            // Hide reason input and duration row — not needed for deleted state
+            var reasonRow = document.getElementById("profileBlockReason");
+            if (reasonRow) reasonRow.closest(".form-group, div") && (document.getElementById("profileBlockReason").parentNode.style.display = "none");
+            // Hide the reason label too
+            var allLabels = document.querySelectorAll("#adminBlockPanel label");
+            allLabels.forEach(function(l) { l.parentNode.style.display = "none"; });
+            if (durationRow) durationRow.style.display = "none";
+ 
+            btnsContainer.innerHTML =
+                "<div style='background:#f9fafb;border:1px solid #e5e7eb;border-radius:10px;" +
+                "padding:1rem;margin-bottom:0.75rem;'>" +
+                "<div style='font-size:0.78rem;font-weight:700;text-transform:uppercase;" +
+                "letter-spacing:0.06em;color:#9ca3af;margin-bottom:0.35rem;'>DELETION REASON</div>" +
+                "<div style='font-size:0.9rem;color:#374151;font-weight:500;'>" +
+                (blockReason || "No reason provided") + "</div>" +
+                (blockedByName ? "<div style='font-size:0.78rem;color:#6b7280;margin-top:0.3rem;'>Deleted by: Admin " + blockedByName + "</div>" : "") +
+                "</div>" +
+                "<button onclick='restoreDeletedAccount(" + userId + ")' " +
+                "style='width:100%;padding:0.6rem 1rem;border-radius:8px;border:1px solid #16a34a;" +
+                "background:transparent;color:#16a34a;font-size:0.88rem;font-weight:700;" +
+                "cursor:pointer;font-family:inherit;display:flex;align-items:center;" +
+                "justify-content:center;gap:0.5rem;'>" +
+                "↩ Restore This Account</button>" +
+                "<div style='font-size:0.75rem;color:#9ca3af;text-align:center;margin-top:0.5rem;'>" +
+                "Restoring will set account back to ACTIVE status</div>";
+            return;
+        }
+ 
+        // ── Build buttons based on current status ────────────────────────
+        // ACTIVE   → TempBlock + PermBlock + Delete
+        // TEMPORARY→ Unblock  + PermBlock  + Delete
+        // PERMANENT→ Unblock  + Delete
+        var buttons = [];
+ 
+        if (!status || status === "ACTIVE") {
+            buttons.push({ label:"⏱ Temporarily Block User", type:"temporary",
+                bg:"#f59e0b", color:"#fff", border:"none", durationNeeded: true });
+            buttons.push({ label:"🔒 Permanently Block User", type:"permanent",
+                bg:"#dc2626", color:"#fff", border:"none", durationNeeded: false });
+        }
+        if (status === "TEMPORARY") {
+            buttons.push({ label:"✅ Unblock This User", type:"unblock",
+                bg:"transparent", color:"#16a34a", border:"1px solid #16a34a", durationNeeded: false });
+            buttons.push({ label:"🔒 Escalate to Permanent Block", type:"permanent",
+                bg:"#dc2626", color:"#fff", border:"none", durationNeeded: false });
+        }
+        if (status === "PERMANENT") {
+            buttons.push({ label:"✅ Unblock This User", type:"unblock",
+                bg:"transparent", color:"#16a34a", border:"1px solid #16a34a", durationNeeded: false });
+        }
+        // Delete always available
+        buttons.push({ label:"🗑 Delete Account (Permanent)", type:"delete",
+            bg:"transparent", color:"#6b7280", border:"1px solid #d1d5db", durationNeeded: false });
+ 
+        // Show/hide duration row
+        var anyDuration = buttons.some(function(b) { return b.durationNeeded; });
+        if (durationRow) durationRow.style.display = anyDuration ? "block" : "none";
+ 
+        buttons.forEach(function(btn) {
+            var el = document.createElement("button");
+            el.style.cssText = "padding:0.55rem 1rem;border-radius:8px;border:" + btn.border + ";" +
+                "cursor:pointer;background:" + btn.bg + ";color:" + btn.color + ";" +
+                "font-size:0.85rem;font-weight:600;font-family:inherit;width:100%;" +
+                "text-align:left;transition:opacity 0.2s;margin-bottom:0.35rem;";
+            el.textContent = btn.label;
+            el.onmouseover = function() { this.style.opacity = "0.82"; };
+            el.onmouseout  = function() { this.style.opacity = "1"; };
+            el.onclick     = function() { openBlockModal(btn.type); };
+            btnsContainer.appendChild(el);
+        });
+    }
+ 
+    function openBlockModal(type) {
+        var reasonEl = document.getElementById("profileBlockReason");
+        var hoursEl  = document.getElementById("profileBlockHours");
+        var reason   = reasonEl ? reasonEl.value.trim() : "";
+        var hours    = hoursEl  ? parseInt(hoursEl.value) : 24;
+ 
+        if (type !== "unblock" && !reason) {
+            if (reasonEl) {
+                reasonEl.style.borderColor = "#ef4444";
+                reasonEl.focus();
+                setTimeout(function() { reasonEl.style.borderColor = ""; }, 2500);
+            }
+            if (typeof showToast === "function") showToast("Please enter a reason before taking this action.", "warning");
+            return;
+        }
+ 
+        _pendingAction = type;
+        _pendingHours  = hours;
+        _pendingReason = reason;
+ 
+        var cfg = {
+            temporary: {
+                icon:"⏱", title:"Temporarily block for " + hours + " hours?",
+                body: "The user will be unable to log in for " + hours + " hours.<br>" +
+                      "<strong>Reason:</strong> " + reason,
+                btnColor:"#f59e0b", btnText:"Block Temporarily"
+            },
+            permanent: {
+                icon:"🔒", title:"Permanently block this user?",
+                body: "This will prevent the user from logging in indefinitely.<br>" +
+                      "<strong>Reason:</strong> " + reason,
+                btnColor:"#dc2626", btnText:"Permanently Block"
+            },
+            unblock: {
+                icon:"✅", title:"Restore this user's account?",
+                body: "The user will be able to log in again normally.",
+                btnColor:"#16a34a", btnText:"Yes, Unblock"
+            },
+            delete: {
+                icon:"🗑", title:"Permanently delete this account?",
+                body: "The user record is kept for audit purposes but login is permanently blocked.<br>" +
+                      "<strong>Reason:</strong> " + (reason || "(none provided)"),
+                btnColor:"#6b7280", btnText:"Delete Account"
+            }
+        };
+ 
+        var c = cfg[type];
+        if (!c) return;
+ 
+        var iconEl      = document.getElementById("modalIcon");
+        var titleEl     = document.getElementById("modalTitle");
+        var bodyEl      = document.getElementById("modalBody");
+        var confirmBtn  = document.getElementById("modalConfirmBtn");
+ 
+        if (iconEl)     iconEl.textContent      = c.icon;
+        if (titleEl)    titleEl.textContent      = c.title;
+        if (bodyEl)     bodyEl.innerHTML         = c.body;
+        if (confirmBtn) {
+            confirmBtn.style.background = c.btnColor;
+            confirmBtn.textContent      = c.btnText;
+            confirmBtn.onclick          = executeBlockAction;
+        }
+ 
+        var modal = document.getElementById("blockConfirmModal");
+        if (modal) modal.style.display = "flex";
+    }
+ 
+    function closeBlockModal() {
+        var modal = document.getElementById("blockConfirmModal");
+        if (modal) modal.style.display = "none";
+        _pendingAction = null;
+    }
+ 
+    function executeBlockAction() {
+        // SAVE values BEFORE closeBlockModal() nullifies _pendingAction
+        var type   = _pendingAction;
+        var userId = _profileUserId;
+        var reason = _pendingReason || "";
+        var hours  = _pendingHours  || 24;
+ 
+        closeBlockModal(); // safe to call now — values already captured above
+ 
+        if (!type || !userId) {
+            if (typeof showToast === "function")
+                showToast("Error: no action or user selected.", "error");
+            return;
+        }
+ 
+        var url, method, body;
+        if      (type === "temporary") { url = API_BASE_URL + "/admin/users/" + userId + "/block/temporary"; method = "POST";   body = JSON.stringify({reason: reason, hours: hours}); }
+        else if (type === "permanent") { url = API_BASE_URL + "/admin/users/" + userId + "/block/permanent"; method = "POST";   body = JSON.stringify({reason: reason}); }
+        else if (type === "unblock")   { url = API_BASE_URL + "/admin/users/" + userId + "/unblock";         method = "POST";   body = JSON.stringify({}); }
+        else if (type === "delete")    { url = API_BASE_URL + "/admin/users/" + userId + "/delete"; method = "POST";   body = JSON.stringify({reason: reason}); }
+        else return;
+ 
+        fetch(url, { method: method, headers: getAuthHeaders(), body: body })
+            .then(function(res) {
+                if (!res.ok) {
+                    return res.json().then(function(err) {
+                        throw new Error(err.message || "Action failed");
+                    });
+                }
+                return res.json();
+            })
+            .then(function() {
+                var msgs = {
+                    temporary: "User temporarily blocked for " + hours + " hours.",
+                    permanent: "User permanently blocked.",
+                    unblock:   "User account restored to active.",
+                    delete:    "User account deleted."
+                };
+                if (typeof showToast === "function") showToast(msgs[type], "success");
+ 
+                // Clear reason field
+                var reasonEl = document.getElementById("profileBlockReason");
+                if (reasonEl) reasonEl.value = "";
+ 
+                // Determine new status and re-render panel
+                var newStatus = (type === "unblock")   ? "ACTIVE"
+                              : (type === "temporary") ? "TEMPORARY"
+                              : (type === "permanent") ? "PERMANENT"
+                              : "DELETED";
+                var expiresAt = (type === "temporary")
+                    ? new Date(Date.now() + hours * 3600000).toISOString()
+                    : null;
+ 
+                renderAdminBlockPanel(userId, newStatus, expiresAt, reason, null);
+            })
+            .catch(function(e) {
+                if (typeof showToast === "function") showToast(e.message || "Server error", "error");
+            });
+    }
+ 
+    // ── Inline confirm UI for account restoration ────────────────────────
+    var _restoreTargetId = null;
+ 
+    function restoreDeletedAccount(userId) {
+        _restoreTargetId = userId;
+        // Show the inline confirm panel instead of confirm()
+        var panel = document.getElementById("restoreConfirmPanel");
+        if (panel) panel.style.display = "block";
+        // Scroll to it
+        if (panel) panel.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    }
+ 
+    function cancelRestoreAccount() {
+        var panel = document.getElementById("restoreConfirmPanel");
+        if (panel) panel.style.display = "none";
+        _restoreTargetId = null;
+    }
+ 
+    function confirmRestoreAccount() {
+        var userId = _restoreTargetId;
+        if (!userId) return;
+ 
+        var confirmBtn = document.getElementById("restoreConfirmBtn");
+        if (confirmBtn) { confirmBtn.disabled = true; confirmBtn.textContent = "Restoring..."; }
+ 
+        fetch(API_BASE_URL + "/admin/users/" + userId + "/unblock", {
+            method: "POST", headers: getAuthHeaders(), body: JSON.stringify({})
+        })
+        .then(function(res) {
+            if (!res.ok) throw new Error("Failed to restore account");
+            return res.json();
+        })
+        .then(function() {
+            if (typeof showToast === "function") showToast("Account restored to ACTIVE successfully!", "success");
+            cancelRestoreAccount();
+            renderAdminBlockPanel(userId, "ACTIVE", null, null, null);
+            // Re-show reason input and labels
+            var allLabels = document.querySelectorAll("#adminBlockPanel label");
+            allLabels.forEach(function(l) { l.parentNode.style.display = ""; });
+            var reasonInput = document.getElementById("profileBlockReason");
+            if (reasonInput) reasonInput.parentNode.style.display = "";
+        })
+        .catch(function(e) {
+            if (typeof showToast === "function") showToast(e.message || "Server error", "error");
+            if (confirmBtn) { confirmBtn.disabled = false; confirmBtn.textContent = "Yes, Restore Account"; }
+        });
+    }
+ 
+    // Close modal when clicking outside it — wrapped in DOMContentLoaded
+    document.addEventListener("DOMContentLoaded", function() {
+        var modal = document.getElementById("blockConfirmModal");
+        if (modal) {
+            modal.addEventListener("click", function(e) {
+                if (e.target === modal) closeBlockModal();
+            });
+        }
+    });
+    </script>
+ 
+ 
+    <!-- Block Confirm Modal — at body level so position:fixed works correctly -->
+    <div id="blockConfirmModal" style="display:none; background:rgba(0,0,0,0.55);
+        position:fixed; inset:0; z-index:99999; align-items:center; justify-content:center;">
+        <div style="background:#fff; border-radius:14px; padding:2rem 2rem 1.75rem;
+            max-width:440px; width:90%; box-shadow:0 24px 64px rgba(0,0,0,0.35);
+            position:relative;">
+            <div id="modalIcon"  style="font-size:2.2rem; margin-bottom:0.75rem; text-align:center;"></div>
+            <h3  id="modalTitle" style="font-size:1.1rem; font-weight:700; margin:0 0 0.5rem; color:#111827; text-align:center;"></h3>
+            <p   id="modalBody"  style="font-size:0.88rem; color:#6b7280; margin:0 0 1.5rem; line-height:1.65; text-align:center;"></p>
+            <div style="display:flex; gap:0.75rem; justify-content:center;">
+                <button onclick="closeBlockModal()"
+                    style="padding:0.5rem 1.5rem; border-radius:8px; border:1px solid #d1d5db;
+                    background:transparent; color:#374151; font-size:0.9rem; font-weight:500;
+                    cursor:pointer; font-family:inherit; min-width:100px;">
+                    Cancel
+                </button>
+                <button id="modalConfirmBtn"
+                    style="padding:0.5rem 1.5rem; border-radius:8px; border:none;
+                    font-size:0.9rem; font-weight:600; cursor:pointer; font-family:inherit;
+                    color:#fff; min-width:140px;">
+                    Confirm
+                </button>
+            </div>
+        </div>
+    </div>
+ 
+</body>
+</html>

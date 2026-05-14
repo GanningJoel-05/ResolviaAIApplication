@@ -1,0 +1,793 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Profile - ResolviaAI</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="admin-dashboard.css">
+    <style>
+        .profile-wrapper { max-width: 700px; margin: 0 auto; }
+        .profile-avatar-large {
+            width: 80px; height: 80px; border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary-accent) 0%, #6366f1 100%);
+            color: #fff; display: flex; align-items: center; justify-content: center;
+            font-weight: 700; font-size: 2.2rem; flex-shrink: 0;
+        }
+        .profile-field {
+            padding: 1rem 0; border-bottom: 1px solid var(--border-color);
+            display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+        }
+        .profile-field:last-child { border-bottom: none; }
+        .profile-label {
+            font-size: 0.8rem; font-weight: 600; text-transform: uppercase;
+            letter-spacing: 0.06em; color: #6b7280; min-width: 120px;
+        }
+        .profile-value { font-size: 1rem; font-weight: 500; color: var(--text-color); text-align: right; }
+        .stat-grid {
+            display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.25rem;
+            margin-bottom: 2rem;
+        }
+        .stat-card {
+            background: var(--card-bg); border: 1px solid var(--border-color);
+            border-radius: var(--radius); padding: 1.5rem; text-align: center;
+            box-shadow: var(--shadow);
+        }
+        .stat-number {
+            font-size: 2.2rem; font-weight: 800; color: var(--text-color);
+            line-height: 1; margin-bottom: 0.4rem;
+        }
+        .stat-label {
+            font-size: 0.8rem; font-weight: 600; text-transform: uppercase;
+            letter-spacing: 0.04em; color: #6b7280;
+        }
+        .admin-badge {
+            padding: 4px 14px; border-radius: 99px; font-size: 0.8rem; font-weight: 600;
+            background: #f5f3ff; color: #5b21b6; border: 1px solid #ddd6fe;
+        }
+        /* MOD 2: unique ID badge */
+        .admin-id-badge {
+            display: inline-block; padding: 4px 14px; border-radius: 99px;
+            font-size: 0.85rem; font-weight: 700; letter-spacing: 0.06em;
+            background: #ede9fe; color: #5b21b6; border: 1px solid #ddd6fe;
+            font-family: 'Courier New', monospace;
+        }
+        .page-header-admin { margin-bottom: 2rem; }
+        .page-header-admin h1 {
+            font-size: 1.6rem; font-weight: 700; color: var(--text-color); margin: 0 0 0.25rem;
+        }
+        .page-header-admin p { color: #6b7280; margin: 0; font-size: 0.95rem; }
+        @media (max-width: 600px) { .stat-grid { grid-template-columns: 1fr 1fr; } }
+ 
+        #adminPicWrapper { flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
+        .btn-upload-photo {
+            display: inline-flex; align-items: center; gap: 0.4rem;
+            padding: 0.4rem 1rem; border: 1px solid var(--border-color); border-radius: 7px;
+            font-size: 0.82rem; font-weight: 500; cursor: pointer;
+            background: var(--card-bg); color: var(--text-color);
+            transition: all 0.2s; font-family: inherit;
+        }
+        .btn-upload-photo:hover { background: #f3f4f6; border-color: #94a3b8; }
+        .btn-remove-photo {
+            display: inline-flex; align-items: center; gap: 0.4rem;
+            padding: 0.35rem 0.8rem; border: 1px solid #fecaca; border-radius: 7px;
+            font-size: 0.78rem; font-weight: 500; cursor: pointer;
+            background: #fee2e2; color: #991b1b; transition: all 0.2s; font-family: inherit;
+        }
+        .btn-remove-photo:hover { background: #fecaca; }
+    </style>
+</head>
+<body class="admin-body">
+ 
+    <aside class="sidebar">
+        <div class="sidebar-header"><h2>ResolviaAI</h2></div>
+        <ul class="sidebar-menu">
+            <li><a href="admin-dashboard.html">Dashboard</a></li>
+            <li><a href="ticket-management.html">Ticket Management</a></li>
+            <li><a href="ai-decision-panel.html">AI Decision Panel</a></li>
+                        <li><a href="admin-activity-log.html">Activity Log</a></li>
+<li><a href="admin-profile.html" class="active">My Profile</a></li>
+            <li><a href="admin-settings.html">Settings</a></li>
+        </ul>
+    </aside>
+ 
+    <div class="main-wrapper">
+        <nav class="admin-nav">
+            <div class="nav-title">Admin Profile</div>
+            <div class="nav-right">
+                <div class="user-profile">
+                    <div class="avatar-circle" id="adminAvatar">A</div>
+                    <span class="user-name" id="adminNameText">Admin</span>
+                </div>
+                <button class="btn-logout" onclick="handleLogout()">Logout</button>
+            </div>
+        </nav>
+ 
+        <main class="admin-content">
+            <div class="profile-wrapper">
+ 
+                <div class="page-header-admin">
+                    <h1 id="pageGreeting">My Profile</h1>
+                    <p>Your admin account information and activity overview.</p>
+                </div>
+ 
+                <!-- Profile Card -->
+                <div class="card" style="padding:2rem; margin-bottom:2rem;">
+                    <div style="display:flex; align-items:center; gap:1.5rem;
+                        padding-bottom:1.5rem; border-bottom:1px solid var(--border-color); margin-bottom:0.5rem;">
+ 
+                        <div id="adminPicWrapper" style="flex-shrink:0;">
+                            <div class="profile-avatar-large" id="profileAvatarLarge">A</div>
+                        </div>
+ 
+                        <div>
+                            <div style="font-size:1.5rem; font-weight:700; color:var(--text-color);"
+                                id="profileFullName">Loading...</div>
+                            <!-- BATCH 5B: username + name edit -->
+                            <div id="adminUsernameDisplay" style="font-size:0.85rem; color:#6366f1;
+                                font-weight:600; margin-top:2px;">@—</div>
+                            <div style="font-size:0.9rem; color:#6b7280; margin-top:0.3rem;"
+                                id="profileEmailSub">...</div>
+                            <span class="admin-badge" style="display:inline-block; margin-top:0.5rem;">
+                                Administrator
+                            </span>
+ 
+                            <!-- Edit trigger buttons — visible, small, unobtrusive -->
+                            <div style="display:flex;gap:0.5rem;margin-top:0.6rem;flex-wrap:wrap;">
+                                <button onclick="toggleAdminEditPanel()"
+                                    style="padding:0.28rem 0.75rem;border-radius:99px;font-size:0.75rem;
+                                    border:1px solid var(--border-color);background:transparent;
+                                    color:var(--primary-accent);cursor:pointer;font-family:inherit;
+                                    font-weight:600;transition:all 0.2s;"
+                                    onmouseover="this.style.background='var(--primary-accent)';this.style.color='#fff'"
+                                    onmouseout="this.style.background='transparent';this.style.color='var(--primary-accent)'">
+                                    ✏️ Edit Profile
+                                </button>
+                            </div>
+ 
+                            <!-- Name & username edit controls — HIDDEN by default, toggled by button -->
+                            <div id="adminNameEditControls" style="display:none;flex-direction:column;
+                                gap:0.5rem;margin-top:0.85rem;background:var(--bg-color);
+                                border:1px solid var(--border-color);border-radius:10px;padding:1rem;">
+ 
+                                <div style="font-size:0.78rem;font-weight:700;color:#6b7280;
+                                    text-transform:uppercase;letter-spacing:0.06em;margin-bottom:0.25rem;">
+                                    Edit Name
+                                    <span style="font-size:0.7rem;font-weight:400;color:#9ca3af;
+                                        text-transform:none;letter-spacing:0;">
+                                        — once every 14 days
+                                    </span>
+                                </div>
+                                <div style="display:flex;gap:0.5rem;align-items:center;flex-wrap:wrap;">
+                                    <input id="adminNameEditInput" type="text" placeholder="Enter new name (no emojis)"
+                                        oninput="stripEmojisFromInput(this)"
+                                        style="padding:0.4rem 0.75rem;border:1px solid var(--border-color);
+                                        border-radius:8px;font-size:0.88rem;font-family:inherit;
+                                        background:var(--background);color:var(--text-color);flex:1;min-width:0;">
+                                    <button onclick="submitAdminNameChange()"
+                                        style="padding:0.4rem 1rem;border-radius:8px;border:none;
+                                        background:#4f46e5;color:#fff;font-size:0.82rem;font-weight:700;
+                                        cursor:pointer;font-family:inherit;white-space:nowrap;">Save Name</button>
+                                </div>
+                                <div id="adminNameHint" style="font-size:0.73rem;color:#6b7280;"></div>
+ 
+                                <div style="height:1px;background:var(--border-color);margin:0.25rem 0;"></div>
+ 
+                                <div style="font-size:0.78rem;font-weight:700;color:#6b7280;
+                                    text-transform:uppercase;letter-spacing:0.06em;margin-bottom:0.25rem;">
+                                    Change Username
+                                    <span style="font-size:0.7rem;font-weight:400;color:#9ca3af;
+                                        text-transform:none;letter-spacing:0;">
+                                        — max 2 times/year · lowercase, numbers, underscores only
+                                    </span>
+                                </div>
+                                <div style="display:flex;gap:0.5rem;align-items:center;flex-wrap:wrap;">
+                                    <input id="adminUsernameEditInput" type="text"
+                                        placeholder="new_username (e.g. admin_joel)"
+                                        oninput="validateAdminUsernameInput(this)"
+                                        style="padding:0.4rem 0.75rem;border:1px solid var(--border-color);
+                                        border-radius:8px;font-size:0.88rem;font-family:inherit;
+                                        background:var(--background);color:var(--text-color);flex:1;min-width:0;">
+                                    <button onclick="submitAdminUsernameChange()"
+                                        style="padding:0.4rem 1rem;border-radius:8px;border:none;
+                                        background:#6366f1;color:#fff;font-size:0.82rem;font-weight:700;
+                                        cursor:pointer;font-family:inherit;white-space:nowrap;">@Save</button>
+                                </div>
+                                <div id="adminUsernameHint" style="font-size:0.73rem;color:#6b7280;"></div>
+ 
+                                <button onclick="toggleAdminEditPanel()"
+                                    style="align-self:flex-start;padding:0.28rem 0.75rem;border-radius:99px;
+                                    font-size:0.75rem;border:1px solid var(--border-color);background:transparent;
+                                    color:#6b7280;cursor:pointer;font-family:inherit;margin-top:0.25rem;">
+                                    ✕ Close
+                                </button>
+                            </div>
+ 
+                            <div style="display:flex; align-items:center; gap:0.5rem; margin-top:0.75rem; flex-wrap:wrap;">
+                                <input type="file" id="adminPicFileInput" accept="image/*"
+                                    style="display:none;" onchange="handleAdminPhotoUpload(this)">
+                                <button class="btn-upload-photo"
+                                    onclick="document.getElementById('adminPicFileInput').click()">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24"
+                                        fill="none" stroke="currentColor" stroke-width="2"
+                                        stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                                        <polyline points="17 8 12 3 7 8"/>
+                                        <line x1="12" y1="3" x2="12" y2="15"/>
+                                    </svg>
+                                    Upload Photo
+                                </button>
+                                <button class="btn-remove-photo" id="btnAdminRemovePhoto"
+                                    style="display:none;" onclick="handleAdminRemovePhoto()">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24"
+                                        fill="none" stroke="currentColor" stroke-width="2"
+                                        stroke-linecap="round" stroke-linejoin="round">
+                                        <polyline points="3 6 5 6 21 6"/>
+                                        <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+                                    </svg>
+                                    Remove
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+ 
+                    <div class="profile-field">
+                        <span class="profile-label">Full Name</span>
+                        <span class="profile-value" id="profileName">—</span>
+                    </div>
+                    <div class="profile-field">
+                        <span class="profile-label">Email</span>
+                        <span class="profile-value" id="profileEmail">—</span>
+                    </div>
+                    <div class="profile-field">
+                        <span class="profile-label">Role</span>
+                        <span class="profile-value"><span class="admin-badge">Administrator</span></span>
+                    </div>
+                    <!-- MOD 2: Admin Unique ID field -->
+                    <div class="profile-field">
+                        <span class="profile-label">Admin ID</span>
+                        <span class="profile-value" id="profileUniqueId">
+                            <span style="color:#9ca3af; font-size:0.9rem;">Loading...</span>
+                        </span>
+                    </div>
+                    <div class="profile-field">
+                        <span class="profile-label">Member Since</span>
+                        <span class="profile-value" id="profileSince">—</span>
+                    </div>
+                </div>
+ 
+                <!-- Activity Stats -->
+                <h2 style="font-size:1.1rem; font-weight:600; color:var(--text-color);
+                    margin-bottom:1rem;">Activity Overview</h2>
+ 
+                <div class="stat-grid">
+                    <div class="stat-card">
+                        <div class="stat-number" id="statTotal"    style="color:var(--primary-accent);">0</div>
+                        <div class="stat-label">Total Tickets</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" id="statResolved" style="color:#16a34a;">0</div>
+                        <div class="stat-label">Resolved</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" id="statAI"       style="color:#6366f1;">0</div>
+                        <div class="stat-label">AI Auto-Resolved</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" id="statPending"  style="color:#f59e0b;">0</div>
+                        <div class="stat-label">Needs Review</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" id="statMonth"    style="color:#0ea5e9;">0</div>
+                        <div class="stat-label">This Month</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" id="statAIRate"   style="color:#10b981;">0%</div>
+                        <div class="stat-label">AI Success Rate</div>
+                    </div>
+                </div>
+ 
+                <!-- Quick Actions -->
+                <div class="card" style="padding:1.75rem;">
+                    <h3 style="font-size:1rem; font-weight:600; color:var(--text-color);
+                        margin:0 0 1.25rem; border-bottom:1px solid var(--border-color); padding-bottom:0.75rem;">
+                        Quick Actions
+                    </h3>
+                    <div style="display:flex; gap:1rem; flex-wrap:wrap;">
+                        <a href="ticket-management.html" class="btn-indigo"
+                            style="text-decoration:none; font-size:0.9rem; padding:0.5rem 1.25rem;">
+                            View All Tickets
+                        </a>
+                        <a href="ai-decision-panel.html" class="btn-indigo"
+                            style="text-decoration:none; font-size:0.9rem; padding:0.5rem 1.25rem; background:#6366f1;">
+                            AI Decision Panel
+                        </a>
+                        <a href="admin-settings.html"
+                            style="text-decoration:none; font-size:0.9rem; padding:0.5rem 1.25rem;
+                            border:1px solid var(--border-color); border-radius:6px;
+                            color:var(--text-color); background:var(--card-bg); font-weight:500;">
+                            Settings
+                        </a>
+                    </div>
+                </div>
+ 
+            </div>
+                    <!-- BATCH 5B: Admin Performance Stats -->
+            <section class="card profile-wrapper" style="margin-top:1.5rem;padding:1.5rem 2rem;">
+                <h3 style="font-size:1rem;font-weight:700;color:var(--text-color);
+                    margin:0 0 1rem;padding-bottom:0.75rem;border-bottom:1px solid var(--border-color);">
+                    📊 Your Performance Stats
+                    <span style="font-size:0.75rem;font-weight:400;color:#6b7280;margin-left:0.5rem;">
+                        — visible to admins only
+                    </span>
+                </h3>
+                <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:1rem;">
+                    <div style="background:var(--bg-color);border:1px solid var(--border-color);
+                        border-radius:10px;padding:1rem;text-align:center;">
+                        <div style="font-size:0.72rem;font-weight:700;text-transform:uppercase;
+                            letter-spacing:0.06em;color:#6b7280;margin-bottom:0.35rem;">Tickets Solved</div>
+                        <div id="statMyTicketsSolved" style="font-size:2rem;font-weight:800;
+                            color:#4f46e5;">—</div>
+                    </div>
+                    <div style="background:var(--bg-color);border:1px solid var(--border-color);
+                        border-radius:10px;padding:1rem;text-align:center;">
+                        <div style="font-size:0.72rem;font-weight:700;text-transform:uppercase;
+                            letter-spacing:0.06em;color:#6b7280;margin-bottom:0.35rem;">Users Blocked</div>
+                        <div id="statMyUsersBlocked" style="font-size:2rem;font-weight:800;
+                            color:#ef4444;">—</div>
+                    </div>
+                    <div style="background:var(--bg-color);border:1px solid var(--border-color);
+                        border-radius:10px;padding:1rem;text-align:center;">
+                        <div style="font-size:0.72rem;font-weight:700;text-transform:uppercase;
+                            letter-spacing:0.06em;color:#6b7280;margin-bottom:0.35rem;">Total Tickets</div>
+                        <div id="statMyTotal" style="font-size:2rem;font-weight:800;
+                            color:#10b981;">—</div>
+                    </div>
+                    <div style="background:var(--bg-color);border:1px solid var(--border-color);
+                        border-radius:10px;padding:1rem;text-align:center;">
+                        <div style="font-size:0.72rem;font-weight:700;text-transform:uppercase;
+                            letter-spacing:0.06em;color:#6b7280;margin-bottom:0.35rem;">AI Resolved</div>
+                        <div id="statMyAI" style="font-size:2rem;font-weight:800;
+                            color:#f59e0b;">—</div>
+                    </div>
+                </div>
+ 
+                <!-- View Other Admins Section -->
+                <div style="margin-top:1.25rem;padding-top:1rem;border-top:1px solid var(--border-color);">
+                    <div style="font-weight:700;font-size:0.88rem;color:var(--text-color);margin-bottom:0.75rem;">
+                        👥 View Other Admins
+                    </div>
+                    <div id="otherAdminsList" style="display:flex;gap:0.75rem;flex-wrap:wrap;">
+                        <div style="font-size:0.85rem;color:#6b7280;">Loading admins...</div>
+                    </div>
+                </div>
+            </section>
+ 
+            <!-- BLOCKED USERS BY THIS ADMIN -->
+            <section class="card profile-wrapper" style="margin-top:1.5rem;padding:1.5rem 2rem;">
+                <h3 style="font-size:1rem;font-weight:700;color:var(--text-color);
+                    margin:0 0 0.35rem;padding-bottom:0.75rem;border-bottom:1px solid var(--border-color);">
+                    🚫 Accounts You've Blocked / Deleted
+                </h3>
+                <p style="font-size:0.82rem;color:#6b7280;margin:0 0 1.25rem;">
+                    Users whose accounts you have blocked or deleted.
+                </p>
+                <div id="blockedUsersList">
+                    <div style="color:#6b7280;font-size:0.85rem;">Loading...</div>
+                </div>
+            </section>
+</main>
+    </div>
+ 
+    <script src="common.js"></script>
+    <script src="theme.js"></script>
+    <script src="admin-dashboard.js"></script>
+    <script>
+        let _adminUserId = null;
+ 
+        // ── MOD 2: Generate or retrieve a stable admin unique ID ──────────────
+        // Format: RVA-XXXX where XXXX is a 4-digit zero-padded user ID
+        // Stored in localStorage so it's consistent across sessions.
+        // If the backend returns user.uniqueId, use that; otherwise generate.
+        function getOrCreateAdminUniqueId(userId) {
+            const key     = `adminUniqueId_${userId}`;
+            const stored  = localStorage.getItem(key);
+            if (stored) return stored;
+            // Generate: RVA- + zero-padded 4-digit user id
+            const padded  = String(userId).padStart(4, "0");
+            const newId   = `RVA-${padded}`;
+            localStorage.setItem(key, newId);
+            return newId;
+        }
+ 
+        // ── Profile Picture: Initialize ──────────────────────────────────────
+        function initAdminPicture(userId) {
+            _adminUserId = userId;
+            const storedPic = localStorage.getItem("profilePic_admin_" + userId);
+            const wrapper   = document.getElementById("adminPicWrapper");
+            const removeBtn = document.getElementById("btnAdminRemovePhoto");
+ 
+            if (storedPic && wrapper) {
+                wrapper.innerHTML = `<img src="${storedPic}" alt="Admin Photo"
+                    style="width:80px;height:80px;border-radius:50%;object-fit:cover;
+                    border:3px solid var(--primary-accent);box-shadow:0 2px 8px rgba(79,70,229,0.25);">`;
+                if (removeBtn) removeBtn.style.display = "inline-flex";
+                updateAdminNavAvatar(storedPic);
+            } else if (wrapper) {
+                const name = document.getElementById("profileFullName").innerText || "A";
+                wrapper.innerHTML = `<div class="profile-avatar-large"
+                    style="width:80px;height:80px;border-radius:50%;
+                    background:linear-gradient(135deg,var(--primary-accent) 0%,#6366f1 100%);
+                    color:#fff;display:flex;align-items:center;justify-content:center;
+                    font-weight:700;font-size:2.2rem;flex-shrink:0;">
+                    ${name.charAt(0).toUpperCase()}</div>`;
+                if (removeBtn) removeBtn.style.display = "none";
+            }
+        }
+ 
+        // ── Profile Picture: Upload ──────────────────────────────────────────
+        function handleAdminPhotoUpload(input) {
+            const file = input.files[0];
+            if (!file) return;
+            if (file.size > 2 * 1024 * 1024) { showToast("Image must be under 2MB.", "warning"); input.value = ""; return; }
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const base64 = e.target.result;
+                if (!_adminUserId) return;
+                localStorage.setItem("profilePic_admin_" + _adminUserId, base64);
+                const wrapper = document.getElementById("adminPicWrapper");
+                if (wrapper) {
+                    wrapper.innerHTML = `<img src="${base64}" alt="Admin Photo"
+                        style="width:80px;height:80px;border-radius:50%;object-fit:cover;
+                        border:3px solid var(--primary-accent);box-shadow:0 2px 8px rgba(79,70,229,0.25);">`;
+                }
+                const removeBtn = document.getElementById("btnAdminRemovePhoto");
+                if (removeBtn) removeBtn.style.display = "inline-flex";
+                updateAdminNavAvatar(base64);
+                showToast("Profile photo uploaded successfully!", "success");
+            };
+            reader.readAsDataURL(file);
+            input.value = "";
+        }
+ 
+        // ── Profile Picture: Remove ──────────────────────────────────────────
+        function handleAdminRemovePhoto() {
+            if (!_adminUserId) return;
+            showConfirm("Are you sure you want to remove your profile photo?", () => {
+                localStorage.removeItem("profilePic_admin_" + _adminUserId);
+                const name    = document.getElementById("profileFullName").innerText || "A";
+                const wrapper = document.getElementById("adminPicWrapper");
+                if (wrapper) {
+                    wrapper.innerHTML = `<div class="profile-avatar-large"
+                        style="width:80px;height:80px;border-radius:50%;
+                        background:linear-gradient(135deg,var(--primary-accent) 0%,#6366f1 100%);
+                        color:#fff;display:flex;align-items:center;justify-content:center;
+                        font-weight:700;font-size:2.2rem;flex-shrink:0;">
+                        ${name.charAt(0).toUpperCase()}</div>`;
+                }
+                const removeBtn = document.getElementById("btnAdminRemovePhoto");
+                if (removeBtn) removeBtn.style.display = "none";
+                const av = document.getElementById("adminAvatar");
+                if (av) { av.innerHTML = name.charAt(0).toUpperCase(); av.style.padding = ""; }
+                showToast("Profile photo removed.", "info");
+            }, "Remove Photo", "#ef4444");
+        }
+ 
+        function updateAdminNavAvatar(base64) {
+            const av = document.getElementById("adminAvatar");
+            if (av) {
+                av.innerHTML = `<img src="${base64}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;" alt="avatar">`;
+                av.style.padding = "0";
+            }
+        }
+ 
+        // ── Main load ────────────────────────────────────────────────────────
+        document.addEventListener("DOMContentLoaded", async () => {
+            await loadAdminProfile();
+ 
+            try {
+                const profileRes = await fetch(`${API_BASE_URL}/user/profile`, { headers: getAuthHeaders() });
+                if (!profileRes.ok) { handleLogout(); return; }
+                const user = await profileRes.json();
+ 
+                const set = (id, val) => { const el=document.getElementById(id); if(el) el.innerText=val||"—"; };
+ 
+                set("profileFullName", user.name);
+                set("profileEmailSub", user.email);
+                set("profileName",     user.name);
+                set("profileEmail",    user.email);
+                set("profileSince",    formatDate(user.createdAt));
+                set("pageGreeting",    "Welcome, " + user.name);
+ 
+                // BATCH 5B: username
+                const unEl = document.getElementById("adminUsernameDisplay");
+                if (unEl) unEl.textContent = user.username ? "@" + user.username : "@—";
+ 
+                // ── MOD 2: Unique Admin ID ────────────────────────────────────
+                const uidEl = document.getElementById("profileUniqueId");
+                if (uidEl && user.id) {
+                    // Prefer backend-provided uniqueId if available,
+                    // otherwise generate/retrieve from localStorage
+                    const adminId = user.uniqueId || getOrCreateAdminUniqueId(user.id);
+                    uidEl.innerHTML = `<span class="admin-id-badge">${adminId}</span>`;
+                }
+ 
+                // Init profile picture
+                initAdminPicture(user.id);
+ 
+                // Load stats
+                const statsRes = await fetch(`${API_BASE_URL}/admin/stats`, { headers: getAuthHeaders() });
+                if (!statsRes.ok) return;
+                const stats = await statsRes.json();
+ 
+                const total    = stats.totalTickets    || 0;
+                const resolved = stats.resolvedTickets || 0;
+                const aiCount  = stats.aiResolved      || 0;
+                const pending  = stats.openTickets     || 0;
+                const month    = stats.thisMonth       || 0;
+                const aiRate   = total > 0 ? Math.round((aiCount / total) * 100) : 0;
+ 
+                set("statTotal",    total);
+                set("statResolved", resolved);
+                set("statAI",       aiCount);
+                set("statPending",  pending);
+                set("statMonth",    month);
+                set("statAIRate",   aiRate + "%");
+ 
+                // BATCH 5B: Load personal performance stats
+                set("statMyTotal",  total);
+                set("statMyAI",     aiCount);
+                try {
+                    const myId  = user.id;
+                    const pRes  = await fetch(`${API_BASE_URL}/admin/admin-profile/${myId}`,
+                        { headers: getAuthHeaders() });
+                    if (pRes.ok) {
+                        const pd = await pRes.json();
+                        set("statMyTicketsSolved", pd.ticketsSolved ?? "—");
+                        set("statMyUsersBlocked",  pd.usersBlocked  ?? "—");
+                    }
+                } catch(e) { /* non-critical */ }
+ 
+                // BATCH 5B: Load other admins list
+                loadOtherAdmins(user.id);
+ 
+            } catch (err) {
+                console.error(err);
+                showToast("Failed to load profile data", "error");
+            }
+        });
+ 
+        async function loadOtherAdmins(myId) {
+            const container = document.getElementById("otherAdminsList");
+            if (!container) return;
+            try {
+                const res = await fetch(`${API_BASE_URL}/admin/admins/stats`,
+                    { headers: getAuthHeaders() });
+                if (!res.ok) return;
+                const admins = await res.json();
+                const others = admins.filter(a => a.id !== myId);
+                if (!others.length) {
+                    container.innerHTML = "<span style='font-size:0.85rem;color:#6b7280;'>No other admins registered.</span>";
+                    return;
+                }
+                const now = Date.now();
+                const ONLINE_MS = 15 * 60 * 1000;
+                container.innerHTML = others.map(a => {
+                    const lastSeen = parseInt(localStorage.getItem("adminLastSeen_" + a.id) || "0");
+                    const isOnline = (now - lastSeen) < ONLINE_MS && lastSeen > 0;
+                    const initials = (a.name || "A").charAt(0).toUpperCase();
+                    return `<div onclick="window.location.href='admin-profile-view.html?adminId=${a.id}'"
+                        style="cursor:pointer;background:var(--bg-color);border:1px solid var(--border-color);
+                        border-radius:10px;padding:0.75rem 1rem;display:flex;align-items:center;
+                        gap:0.75rem;min-width:180px;transition:all 0.2s;"
+                        onmouseover="this.style.borderColor='#4f46e5'"
+                        onmouseout="this.style.borderColor=''">
+                        <div style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#4f46e5,#6366f1);
+                            color:#fff;display:flex;align-items:center;justify-content:center;
+                            font-weight:700;font-size:0.95rem;flex-shrink:0;position:relative;">
+                            ${initials}
+                            <span style="position:absolute;bottom:-1px;right:-1px;width:10px;height:10px;
+                                border-radius:50%;background:${isOnline ? '#10b981' : '#94a3b8'};
+                                border:2px solid var(--bg-color);"></span>
+                        </div>
+                        <div>
+                            <div style="font-weight:600;font-size:0.88rem;color:var(--text-color);">${a.name}</div>
+                            <div style="font-size:0.72rem;color:#6b7280;">${isOnline ? '🟢 Online' : '⚫ Offline'} · ${a.ticketsSolved || 0} solved</div>
+                        </div>
+                    </div>`;
+                }).join("");
+            } catch(e) { /* non-critical */ }
+        }
+        async function submitAdminNameChange() {
+            const input = document.getElementById("adminNameEditInput");
+            const hint  = document.getElementById("adminNameHint");
+            const val   = input ? input.value.trim() : "";
+            if (!val) { showToast("Please enter a name.", "warning"); return; }
+            try {
+                const res = await fetch(`${API_BASE_URL}/user/profile/name`, {
+                    method: "PATCH", headers: getAuthHeaders(), body: JSON.stringify({ name: val })
+                });
+                let data;
+                try { data = await res.json(); } catch(e) { data = {}; }
+                if (!res.ok) {
+                    const msg = data.message || "Failed to update name.";
+                    if (hint) { hint.textContent = msg; hint.style.color = "#ef4444"; }
+                    showToast(msg, "error"); return;
+                }
+                showToast("Name updated!", "success");
+                document.getElementById("profileFullName").textContent = data.name;
+                const navName = document.getElementById("adminNameText");
+                if (navName) navName.textContent = "Admin: " + data.name;
+                if (hint) { hint.textContent = "✓ Updated. Next change available in 14 days."; hint.style.color = "#10b981"; }
+                if (input) input.value = "";
+            } catch(e) { showToast("Server error", "error"); }
+        }
+ 
+        async function submitAdminUsernameChange() {
+            const input = document.getElementById("adminUsernameEditInput");
+            const hint  = document.getElementById("adminUsernameHint");
+            const val   = input ? input.value.toLowerCase().trim() : "";
+            if (!val || !/^[a-z0-9_]{3,20}$/.test(val)) {
+                showToast("Username: 3-20 chars, only lowercase letters, numbers, underscores.", "warning");
+                if (hint) hint.textContent = "❌ Invalid format. Use a-z, 0-9, _ only.";
+                return;
+            }
+            try {
+                const res = await fetch(`${API_BASE_URL}/user/profile/username`, {
+                    method: "PATCH", headers: getAuthHeaders(), body: JSON.stringify({ username: val })
+                });
+                let data;
+                try { data = await res.json(); } catch(e) { data = {}; }
+                if (!res.ok) {
+                    const msg = data.message || "Failed to update username.";
+                    if (hint) { hint.textContent = msg; hint.style.color = "#ef4444"; }
+                    showToast(msg, "error"); return;
+                }
+                showToast("Username updated! @" + data.username, "success");
+                const unEl = document.getElementById("adminUsernameDisplay");
+                if (unEl) unEl.textContent = "@" + data.username;
+                if (hint) { hint.textContent = "✓ Updated. " + data.changesRemaining + " change(s) left this year."; hint.style.color = "#10b981"; }
+                if (input) input.value = "";
+            } catch(e) { showToast("Server error", "error"); }
+        }
+ 
+        function validateAdminUsernameInput(input) {
+            const hint = document.getElementById("adminUsernameHint");
+            const val  = input.value.toLowerCase().replace(/[^a-z0-9_]/g, "");
+            input.value = val; // strip invalid chars live
+            if (!hint) return;
+            if      (val.length === 0)  hint.textContent = "";
+            else if (val.length < 3)    hint.textContent = "⚠ Too short — minimum 3 characters";
+            else if (val.length > 20)   hint.textContent = "⚠ Too long — maximum 20 characters";
+            else                        hint.textContent = "✓ Valid format";
+            hint.style.color = (val.length >= 3 && val.length <= 20) ? "#10b981" : "#f59e0b";
+        }
+ 
+        function stripEmojisFromInput(input) {
+            const cleaned = input.value.replace(/[^-~ -ɏḀ-ỿ ]/g, '').trimStart();
+            if (cleaned !== input.value) {
+                input.value = cleaned;
+                input.style.borderColor = "#f59e0b";
+                setTimeout(() => { input.style.borderColor = ""; }, 1500);
+            }
+        }
+ 
+        function toggleAdminEditPanel() {
+            const panel = document.getElementById("adminNameEditControls");
+            if (!panel) return;
+            const isVisible = panel.style.display === "flex";
+            panel.style.display = isVisible ? "none" : "flex";
+            if (!isVisible) {
+                const currentName = document.getElementById("profileFullName").textContent;
+                const nameInput   = document.getElementById("adminNameEditInput");
+                const unInput     = document.getElementById("adminUsernameEditInput");
+                if (nameInput && currentName && currentName !== "Loading...")
+                    nameInput.value = currentName;
+                const currentUn = document.getElementById("adminUsernameDisplay");
+                if (unInput && currentUn) {
+                    const un = currentUn.textContent.replace("@","").replace("—","");
+                    if (un) unInput.value = un;
+                }
+                nameInput && nameInput.focus();
+            }
+        }
+    </script>
+ 
+    <script>
+        // ── Load blocked users by this admin ────────────────────────────────
+        async function loadBlockedUsers() {
+            const container = document.getElementById("blockedUsersList");
+            if (!container) return;
+            try {
+                const res = await fetch(`${API_BASE_URL}/admin/blocked-users`, {
+                    headers: getAuthHeaders()
+                });
+                if (!res.ok) {
+                    container.innerHTML = '<div style="color:#6b7280;font-size:0.85rem;">Could not load.</div>';
+                    return;
+                }
+                const users = await res.json();
+                if (!users || users.length === 0) {
+                    container.innerHTML = '<div style="color:#6b7280;font-size:0.85rem;padding:0.5rem 0;">No blocked or deleted users.</div>';
+                    return;
+                }
+ 
+                const statusCfg = {
+                    TEMPORARY: { bg:"#fef3c7", color:"#92400e", label:"⏱ Temp Blocked" },
+                    PERMANENT: { bg:"#fee2e2", color:"#991b1b", label:"🔒 Perm Blocked" },
+                    DELETED:   { bg:"#f1f5f9", color:"#374151", label:"🗑 Deleted"      }
+                };
+ 
+                container.innerHTML = users.map(u => {
+                    const cfg = statusCfg[u.accountStatus] || statusCfg.DELETED;
+                    const since = u.blockedAt
+                        ? new Date(u.blockedAt).toLocaleDateString("en-IN", {day:"2-digit",month:"short",year:"numeric"})
+                        : "—";
+                    const expiry = u.blockExpiresAt
+                        ? `<span style="font-size:0.72rem;color:#6b7280;"> · expires ${new Date(u.blockExpiresAt).toLocaleDateString("en-IN")}</span>`
+                        : "";
+                    return `
+                        <div style="display:flex;align-items:center;justify-content:space-between;
+                            padding:0.7rem 0;border-bottom:1px solid var(--border-color);gap:1rem;flex-wrap:wrap;">
+                            <div style="flex:1;min-width:0;">
+                                <div style="font-weight:600;font-size:0.9rem;color:var(--text-color);
+                                    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${u.name}</div>
+                                <div style="font-size:0.77rem;color:#6b7280;">
+                                    ${u.email} &middot; ${since}${expiry}
+                                </div>
+                                ${u.blockReason
+                                    ? `<div style="font-size:0.75rem;color:#6b7280;margin-top:0.15rem;font-style:italic;">
+                                        "${u.blockReason}"</div>`
+                                    : ""}
+                            </div>
+                            <div style="display:flex;align-items:center;gap:0.5rem;flex-shrink:0;">
+                                <span style="padding:3px 10px;border-radius:99px;font-size:0.72rem;font-weight:700;
+                                    background:${cfg.bg};color:${cfg.color};">${cfg.label}</span>
+                                ${u.accountStatus !== "DELETED"
+                                    ? `<button onclick="unblockFromProfile(${u.id}, this)"
+                                        style="padding:3px 10px;border-radius:6px;border:1px solid #16a34a;
+                                        background:transparent;color:#16a34a;font-size:0.75rem;font-weight:600;
+                                        cursor:pointer;font-family:inherit;">Unblock</button>`
+                                    : ""}
+                            </div>
+                        </div>`;
+                }).join("");
+            } catch (e) {
+                container.innerHTML = '<div style="color:#6b7280;font-size:0.85rem;">Error loading data.</div>';
+            }
+        }
+ 
+        async function unblockFromProfile(userId, btn) {
+            if (!confirm("Restore this user\'s account?")) return;
+            btn.disabled = true; btn.textContent = "...";
+            try {
+                const res = await fetch(`${API_BASE_URL}/admin/users/${userId}/unblock`, {
+                    method: "POST", headers: getAuthHeaders(), body: JSON.stringify({})
+                });
+                if (!res.ok) { showToast("Failed to unblock", "error"); btn.disabled=false; btn.textContent="Unblock"; return; }
+                showToast("User unblocked successfully!", "success");
+                loadBlockedUsers(); // Refresh list
+            } catch (e) {
+                showToast("Server error", "error");
+                btn.disabled = false; btn.textContent = "Unblock";
+            }
+        }
+ 
+        // Hook into existing DOMContentLoaded
+        document.addEventListener("DOMContentLoaded", () => {
+            setTimeout(loadBlockedUsers, 800); // load after main profile data
+        });
+    </script>
+ 
+ 
+    <script>
+    // BATCH 5A: Track admin last-seen for online/offline status
+    (function() {
+        var userId = localStorage.getItem("currentUserId");
+        if (userId && localStorage.getItem("role") === "ADMIN") {
+            localStorage.setItem("adminLastSeen_" + userId, Date.now().toString());
+        }
+    })();
+    </script>
+</body>
+</html>

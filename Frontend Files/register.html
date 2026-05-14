@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register - ResolviaAI</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="auth-container">
+        <div class="auth-image">
+            <img src="https://images.unsplash.com/photo-1550751827-4bd374c3f58b?auto=format&fit=crop&q=80&w=1200"
+                alt="Cyber Technology">
+            <div class="auth-image-content">
+                <h3>Join ResolviaAI.</h3>
+                <p>Set up an account today to streamline, automate, and better manage your support ticketing ecosystem.</p>
+            </div>
+        </div>
+
+        <div class="auth-form-wrapper">
+            <div class="auth-form-container animate-fade-in-up">
+                <a href="index.html" class="logo">Resolvia<span>AI</span></a>
+                <h2>Create an Account</h2>
+                <p class="subtitle">Join ResolviaAI to automate your ticket management.</p>
+
+                <form id="registerForm" onsubmit="return handleRegister(event)">
+
+                    <!-- Full Name -->
+                    <div class="form-group">
+                        <label for="fullName">Full Name:</label>
+                        <input type="text" id="fullName" class="form-control"
+                            placeholder="John Doe" required>
+                    </div>
+
+                    <!-- Username -->
+                    <div class="form-group">
+                        <label for="username">Username
+                            <span style="font-size:0.75rem;font-weight:400;color:#6b7280;"> — unique, 3-20 chars</span>
+                        </label>
+                        <input type="text" id="username" class="form-control"
+                            placeholder="e.g. john_doe or user123"
+                            oninput="validateUsernameInput(this)"
+                            autocomplete="off"
+                            required>
+                        <!-- hint shows format errors, taken status, and available confirmation -->
+                        <div id="usernameHint" style="font-size:0.75rem;margin-top:4px;display:none;"></div>
+                    </div>
+
+                    <!-- Email -->
+                    <div class="form-group">
+                        <label for="email">Email ID:</label>
+                        <input type="email" id="email" class="form-control"
+                            placeholder="name@company.com" required>
+                    </div>
+
+                    <!-- Password with strength bar -->
+                    <div class="form-group">
+                        <label for="regPassword">Password:</label>
+                        <input type="password" id="regPassword" class="form-control"
+                            placeholder="••••••••" required
+                            oninput="checkRegPasswordStrength(this.value);
+                                     document.getElementById('regMatchError').style.display='none';">
+                        <div class="password-strength" style="margin-top:0.5rem;">
+                            <div id="regStrengthBar" class="password-strength-bar"></div>
+                        </div>
+                        <p style="font-size:0.75rem;color:var(--text-muted);margin-top:0.5rem;line-height:1.4;">
+                            Must be at least 8 characters with a mix of letters, numbers &amp; symbols.</p>
+                    </div>
+
+                    <!-- Confirm Password -->
+                    <div class="form-group">
+                        <label for="regConfirmPassword">Confirm Password:</label>
+                        <input type="password" id="regConfirmPassword" class="form-control"
+                            placeholder="••••••••" required
+                            oninput="document.getElementById('regMatchError').style.display='none';">
+                        <div id="regMatchError" class="error-message">Passwords do not match.</div>
+                    </div>
+
+                    <!-- Role -->
+                    <div class="form-group">
+                        <label for="role">Role selection:</label>
+                        <select id="role" class="form-control" required
+                            onchange="handleRoleChange(this.value)">
+                            <option value="" disabled selected>Select your role</option>
+                            <option value="user">USER</option>
+                            <option value="admin">ADMIN</option>
+                        </select>
+                    </div>
+
+                    <!-- Admin Passkey — hidden by default -->
+                    <div class="form-group" id="adminPasskeyGroup" style="display:none;">
+                        <label for="adminPasskey">Admin Passkey:</label>
+                        <input type="password" id="adminPasskey" class="form-control"
+                            placeholder="Enter admin passkey" autocomplete="off">
+                        <p style="font-size:0.75rem;color:var(--text-muted);margin-top:0.4rem;line-height:1.4;">
+                            A secret passkey is required to register as Admin.
+                            Contact your system administrator.</p>
+                    </div>
+
+                    <button type="submit" id="signUpBtn" class="btn btn-primary btn-block">Sign Up</button>
+
+                    <div class="text-center mt-4">
+                        <span style="font-size:0.875rem;color:var(--text-muted);">Already have an account? </span>
+                        <a href="login.html" style="font-size:0.875rem;font-weight:600;">Sign In</a>
+                    </div>
+
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="common.js"></script>
+    <script src="script.js"></script>
+    <script>
+
+        // ── Show/hide admin passkey ───────────────────────────────────────
+        function handleRoleChange(value) {
+            const passkeyGroup = document.getElementById("adminPasskeyGroup");
+            const passkeyInput = document.getElementById("adminPasskey");
+            if (value === "admin") {
+                passkeyGroup.style.display = "block";
+                passkeyInput.setAttribute("required", "true");
+            } else {
+                passkeyGroup.style.display = "none";
+                passkeyInput.removeAttribute("required");
+                passkeyInput.value = "";
+            }
+        }
+
+        // ── Password strength bar ─────────────────────────────────────────
+        function checkRegPasswordStrength(password) {
+            const bar = document.getElementById("regStrengthBar");
+            if (!bar) return;
+            bar.className = "password-strength-bar";
+            if (!password || password.length === 0) return;
+            let strength = 0;
+            if (password.length >= 8)          strength++;
+            if (/[A-Z]/.test(password))        strength++;
+            if (/[0-9]/.test(password))        strength++;
+            if (/[^A-Za-z0-9]/.test(password)) strength++;
+            if      (strength <= 1) bar.classList.add("pass-weak");
+            else if (strength <= 3) bar.classList.add("pass-medium");
+            else                    bar.classList.add("pass-strong");
+        }
+
+        // ── Username: real-time format check + async availability check ───
+        // Track state so we can block form submission if username is taken
+        var _usernameState = "idle"; // "idle" | "checking" | "available" | "taken" | "invalid"
+        var _usernameDebounceTimer = null;
+
+        function validateUsernameInput(input) {
+            var hint = document.getElementById("usernameHint");
+            // Force lowercase and strip invalid chars as user types
+            var val = input.value.toLowerCase().replace(/[^a-z0-9_]/g, "");
+            input.value = val;
+
+            hint.style.display = "block";
+
+            // ── Step 1: local format validation ──────────────────────────
+            if (val.length === 0) {
+                hint.style.display = "none";
+                _usernameState = "idle";
+                return;
+            }
+            if (val.length < 3) {
+                hint.textContent = "Too short — minimum 3 characters";
+                hint.style.color = "#ef4444";
+                _usernameState = "invalid";
+                return;
+            }
+            if (val.length > 20) {
+                hint.textContent = "Too long — maximum 20 characters";
+                hint.style.color = "#ef4444";
+                _usernameState = "invalid";
+                return;
+            }
+
+            // Format is valid — show "checking..." and debounce the API call
+            hint.textContent = "⏳ Checking availability...";
+            hint.style.color = "#6b7280";
+            _usernameState = "checking";
+
+            clearTimeout(_usernameDebounceTimer);
+            _usernameDebounceTimer = setTimeout(function() {
+                checkUsernameAvailability(val, hint);
+            }, 500); // wait 500ms after user stops typing
+        }
+
+        async function checkUsernameAvailability(username, hint) {
+            try {
+                var res = await fetch(API_BASE_URL + "/auth/check-username?username=" + encodeURIComponent(username));
+                var data = await res.json();
+
+                if (data.available === true) {
+                    hint.textContent = "✓ Username is available";
+                    hint.style.color = "#10b981";
+                    _usernameState = "available";
+                } else {
+                    hint.textContent = "✗ Username is already taken — please choose another";
+                    hint.style.color = "#ef4444";
+                    _usernameState = "taken";
+                }
+            } catch (e) {
+                // If the API check fails, allow the form to proceed
+                // (server will catch it on submit anyway)
+                hint.textContent = "✓ Valid format";
+                hint.style.color = "#10b981";
+                _usernameState = "available";
+            }
+        }
+
+        // ── Block form submission if username is taken or still checking ──
+        // Wrap handleRegister to add this guard
+        var _originalHandleRegister = handleRegister;
+        handleRegister = function(event) {
+            if (_usernameState === "taken") {
+                event.preventDefault();
+                showToast("This username is already taken. Please choose a different one.", "error");
+                document.getElementById("username").focus();
+                return false;
+            }
+            if (_usernameState === "checking") {
+                event.preventDefault();
+                showToast("Please wait — checking username availability...", "warning");
+                return false;
+            }
+            return _originalHandleRegister(event);
+        };
+
+    </script>
+</body>
+</html>

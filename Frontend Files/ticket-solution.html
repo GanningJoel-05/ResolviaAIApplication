@@ -1,0 +1,611 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ticket Solution - ResolviaAI</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="dashboard.css">
+    <style>
+        /* Solution Steps */
+        .solution-steps { display:flex; flex-direction:column; gap:0.75rem; }
+        .solution-step  { display:flex; align-items:flex-start; gap:1rem; padding:0.9rem 1rem;
+            background:#fff; border:1px solid #e2e8f0; border-radius:10px; transition:box-shadow 0.2s; }
+        [data-theme="dark"] .solution-step { background:#0f172a; border-color:#334155; }
+        .solution-step:hover { box-shadow:0 2px 8px rgba(0,0,0,0.06); }
+        .step-number { min-width:28px; height:28px; border-radius:50%;
+            background:linear-gradient(135deg,var(--primary) 0%,#3b82f6 100%);
+            color:#fff; display:flex; align-items:center; justify-content:center;
+            font-weight:700; font-size:0.8rem; flex-shrink:0; margin-top:1px; }
+        .step-text { color:#334155; font-size:0.97rem; line-height:1.6;
+            padding-top:2px; white-space:pre-line; }
+        [data-theme="dark"] .step-text { color:#cbd5e1; }
+
+        .action-btn { display:inline-flex; align-items:center; gap:0.4rem;
+            padding:0.45rem 1rem; border-radius:8px; font-size:0.85rem;
+            font-weight:500; cursor:pointer; transition:all 0.2s;
+            font-family:inherit; border:1px solid #e2e8f0;
+            background:#f1f5f9; color:#334155; }
+        .action-btn:hover { background:#e2e8f0; }
+        [data-theme="dark"] .action-btn { background:#1e293b; border-color:#334155; color:#cbd5e1; }
+        [data-theme="dark"] .action-btn:hover { background:#334155; }
+
+        .ticket-title-block { margin-bottom:1.75rem; padding-bottom:1.5rem;
+            border-bottom:1px solid var(--border); }
+        .block-label { font-size:0.78rem; font-weight:600; text-transform:uppercase;
+            letter-spacing:0.06em; color:var(--text-muted); margin-bottom:0.35rem; }
+        .ticket-title-block h2 { font-size:1.4rem; font-weight:700; color:var(--text-main);
+            margin:0 0 0.5rem; }
+        .ticket-title-block p { color:#475569; font-size:0.95rem; margin:0; line-height:1.5; }
+        [data-theme="dark"] .ticket-title-block p { color:#94a3b8; }
+
+        /* ── BATCH 2: Detailed Timeline ── */
+        .detail-timeline {
+            margin-bottom: 2rem;
+            padding: 1.25rem 1.5rem;
+            background: var(--background);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+        }
+        .detail-timeline-title {
+            font-size:0.78rem; font-weight:700; text-transform:uppercase;
+            letter-spacing:0.06em; color:var(--text-muted);
+            margin-bottom:1rem;
+        }
+        .timeline-events { display:flex; flex-direction:column; gap:0; }
+        .timeline-event {
+            display:flex; align-items:flex-start; gap:1rem;
+            padding:0.6rem 0; position:relative;
+        }
+        .timeline-event:not(:last-child)::before {
+            content:'';
+            position:absolute; left:11px; top:28px;
+            width:2px; height:calc(100% + 0px);
+            background: var(--border);
+        }
+        .timeline-dot {
+            width:24px; height:24px; border-radius:50%; flex-shrink:0;
+            display:flex; align-items:center; justify-content:center;
+            font-size:0.7rem; font-weight:700; z-index:1;
+        }
+        .timeline-content { flex:1; padding-top:2px; }
+        .timeline-label { font-size:0.88rem; font-weight:600; color:var(--text-main); }
+        .timeline-time  { font-size:0.78rem; color:var(--text-muted); margin-top:1px; }
+        .timeline-duration {
+            font-size:0.75rem; font-weight:700; padding:2px 8px;
+            border-radius:99px; white-space:nowrap; align-self:center;
+        }
+
+        /* ── BATCH 2: Satisfaction Rating ── */
+        .rating-card {
+            margin-top:1.5rem;
+            background:var(--surface);
+            border:1px solid var(--border);
+            border-radius:var(--radius);
+            padding:1.5rem;
+        }
+        [data-theme="dark"] .rating-card { background:#1e293b; border-color:#334155; }
+        .rating-card h4 { font-size:1rem; font-weight:600; color:var(--text-main);
+            margin:0 0 0.25rem; }
+        .rating-card p { font-size:0.85rem; color:var(--text-muted); margin:0 0 1.25rem; }
+
+        .star-row { display:flex; gap:0.35rem; margin-bottom:1rem; }
+        .star {
+            font-size:2rem; cursor:pointer; transition:transform 0.15s;
+            line-height:1; user-select:none;
+            filter: grayscale(1) opacity(0.4);
+        }
+        .star:hover, .star.active { filter:none; transform:scale(1.15); }
+        .star.hover-active { filter:none; }
+
+        .rating-comment {
+            width:100%; padding:0.7rem 0.9rem;
+            border:1px solid var(--border); border-radius:8px;
+            font-size:0.9rem; font-family:inherit;
+            background:var(--background); color:var(--text-main);
+            resize:vertical; min-height:72px; margin-bottom:1rem;
+        }
+        [data-theme="dark"] .rating-comment { background:#0f172a; border-color:#334155; color:#f1f5f9; }
+        .rating-comment:focus { outline:none; border-color:var(--primary);
+            box-shadow:0 0 0 3px rgba(79,70,229,0.1); }
+        .rating-comment::placeholder { color:var(--text-muted); }
+
+        .btn-submit-rating {
+            padding:0.55rem 1.5rem; border-radius:8px;
+            background:var(--primary); color:#fff; border:none;
+            font-size:0.9rem; font-weight:600; cursor:pointer;
+            font-family:inherit; transition:all 0.2s;
+        }
+        .btn-submit-rating:hover { background:var(--primary-hover); transform:translateY(-1px); }
+        .btn-submit-rating:disabled { opacity:0.5; cursor:not-allowed; transform:none; }
+
+        .rating-done {
+            display:flex; align-items:center; gap:0.75rem;
+            padding:1rem; background:#dcfce7; border-radius:8px;
+            color:#166534; font-weight:600; font-size:0.9rem;
+        }
+
+        @media print {
+            .user-sidebar,.dashboard-nav,.back-link,.page-header p,
+            .ai-indicator,.action-btn,.rating-card { display:none !important; }
+            .user-main-wrapper { margin-left:0 !important; }
+            .card { box-shadow:none !important; border:none !important; }
+        }
+    </style>
+</head>
+<body class="dashboard-body">
+
+    <div class="user-main-wrapper">
+        <nav class="dashboard-nav">
+            <span class="nav-page-title">Ticket Solution</span>
+            <div class="nav-right">
+                <div class="user-profile" onclick="window.location.href='profile.html'" title="My Profile">
+                    <div class="avatar" id="userAvatar">A</div>
+                    <div class="user-info">
+                        <span class="user-name"  id="userNameText">User</span>
+                        <span class="user-email" id="userEmailText">user@email.com</span>
+                    </div>
+                </div>
+                <button class="btn-logout" onclick="handleLogout()">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                        <polyline points="16 17 21 12 16 7"></polyline>
+                        <line x1="21" y1="12" x2="9" y2="12"></line>
+                    </svg>
+                </button>
+            </div>
+        </nav>
+
+        <main class="dashboard-main form-page-main">
+            <a href="dashboard.html" class="back-link">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"
+                    fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="19" y1="12" x2="5" y2="12"></line>
+                    <polyline points="12 19 5 12 12 5"></polyline>
+                </svg>
+                Back to Dashboard
+            </a>
+
+            <header class="page-header">
+                <h1>Ticket Solution</h1>
+                <p>Your ticket has been resolved. See the solution below.</p>
+            </header>
+
+            <section class="card ticket-details-card">
+                <div id="statusTimeline"></div>
+
+                <!-- BATCH 2: Detailed Timeline -->
+                <div class="detail-timeline" id="detailTimeline" style="display:none;">
+                    <div class="detail-timeline-title">📅 Resolution History</div>
+                    <div class="timeline-events" id="timelineEvents"></div>
+                </div>
+
+                <div class="ticket-meta">
+                    <div class="meta-item">
+                        <span class="meta-label">Ticket Number</span>
+                        <span class="meta-value" id="view-ticket-id">Loading...</span>
+                    </div>
+                    <div class="meta-item">
+                        <span class="meta-label">Date</span>
+                        <span class="meta-value" id="view-ticket-date">--/--/----</span>
+                    </div>
+                    <div class="meta-item">
+                        <span class="meta-label">Category</span>
+                        <span class="meta-value" id="view-ticket-category">—</span>
+                    </div>
+                    <div class="meta-item">
+                        <span class="meta-label">Status</span>
+                        <span class="badge badge-approve">Resolved</span>
+                    </div>
+                </div>
+
+                <div class="ticket-title-block">
+                    <div class="block-label">Ticket Name</div>
+                    <h2 id="view-ticket-title">Loading...</h2>
+                    <p  id="view-ticket-desc">Loading description...</p>
+                </div>
+
+                <div class="solution-box resolved-box">
+                    <div class="solution-header" style="justify-content:space-between;flex-wrap:wrap;gap:0.5rem;">
+                        <div style="display:flex;align-items:center;gap:0.6rem;">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
+                                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                stroke-linejoin="round" class="check-icon">
+                                <polyline points="20 6 9 17 4 12"></polyline>
+                            </svg>
+                            <h4>Suggested Solution</h4>
+                        </div>
+                        <div style="display:flex;gap:0.5rem;">
+                            <button class="action-btn" id="copyBtn" onclick="handleCopy(this)">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"
+                                    fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                    stroke-linejoin="round">
+                                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                                </svg>
+                                Copy
+                            </button>
+                            <button class="action-btn" onclick="window.print()">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"
+                                    fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                    stroke-linejoin="round">
+                                    <polyline points="6 9 6 2 18 2 18 9"></polyline>
+                                    <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path>
+                                    <rect x="6" y="14" width="12" height="8"></rect>
+                                </svg>
+                                Print
+                            </button>
+                        </div>
+                    </div>
+                    <div class="solution-body" style="margin-top:1rem;">
+                        <div style="font-size:0.78rem;font-weight:600;text-transform:uppercase;
+                            letter-spacing:0.06em;color:var(--text-muted);margin-bottom:0.85rem;">
+                            Step-by-Step Resolution
+                        </div>
+                        <div id="view-ticket-solution" class="solution-steps">
+                            <div style="color:#64748b;font-size:0.9rem;">Loading solution...</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="ai-indicator">
+                    <div class="indicator-color bg-green" id="indicatorDot"></div>
+                    <div class="indicator-text">
+                        <strong>Resolution Type:</strong>
+                        <span id="indicator-type-text">Loading...</span>
+                    </div>
+                </div>
+
+                <!-- BATCH 5A: Resolver Admin — shown only for admin-resolved tickets -->
+                <div id="resolverAdminCard" style="display:none; margin-top:0.75rem;
+                    background:#f0fdf4; border:1px solid #bbf7d0; border-left:4px solid #10b981;
+                    border-radius:10px; padding:0.85rem 1.25rem;
+                    display:none; align-items:center; gap:0.85rem;">
+                    <span style="font-size:1.2rem;">👨‍💼</span>
+                    <div>
+                        <div style="font-size:0.78rem;font-weight:700;text-transform:uppercase;
+                            letter-spacing:0.06em;color:#059669;margin-bottom:0.15rem;">
+                            Resolved By Admin
+                        </div>
+                        <div id="resolverAdminInfo" style="font-size:0.92rem;font-weight:600;color:#065f46;"></div>
+                    </div>
+                </div>
+
+                <!-- BATCH 2: Satisfaction Rating Widget -->
+                <div class="rating-card" id="ratingCard" style="display:none;">
+                    <h4>⭐ Was this solution helpful?</h4>
+                    <p>Rate this resolution to help improve our AI system.</p>
+
+                    <div class="star-row" id="starRow">
+                        <span class="star" data-val="1" onclick="selectRating(1)"
+                            onmouseover="hoverRating(1)" onmouseout="unhoverRating()">⭐</span>
+                        <span class="star" data-val="2" onclick="selectRating(2)"
+                            onmouseover="hoverRating(2)" onmouseout="unhoverRating()">⭐</span>
+                        <span class="star" data-val="3" onclick="selectRating(3)"
+                            onmouseover="hoverRating(3)" onmouseout="unhoverRating()">⭐</span>
+                        <span class="star" data-val="4" onclick="selectRating(4)"
+                            onmouseover="hoverRating(4)" onmouseout="unhoverRating()">⭐</span>
+                        <span class="star" data-val="5" onclick="selectRating(5)"
+                            onmouseover="hoverRating(5)" onmouseout="unhoverRating()">⭐</span>
+                    </div>
+
+                    <div id="ratingLabel" style="font-size:0.85rem;color:var(--text-muted);
+                        margin-bottom:0.85rem;min-height:1.2em;"></div>
+
+                    <textarea id="ratingComment" class="rating-comment"
+                        placeholder="Optional: tell us more about your experience..."></textarea>
+
+                    <button class="btn-submit-rating" id="ratingSubmitBtn"
+                        onclick="submitRating()" disabled>
+                        Submit Rating
+                    </button>
+                </div>
+
+                <!-- Already rated message -->
+                <div class="rating-done" id="ratingDone" style="display:none;">
+                    ✅ Thanks for your feedback! You rated this solution
+                    <span id="ratingDoneStars">⭐⭐⭐⭐⭐</span>
+                </div>
+
+            </section>
+        </main>
+    </div>
+
+    <script src="common.js"></script>
+    <script src="theme.js"></script>
+    <script src="dashboard.js"></script>
+    <script>
+        let _rawSolution  = "";
+        let _selectedRating = 0;
+        let _currentTicketId = null;
+
+        // ── Render solution steps (3-tier fallback) ──────────────────────────
+        function renderSolutionSteps(rawText, containerId) {
+            _rawSolution = rawText || "";
+            const container = document.getElementById(containerId);
+            if (!container) return;
+            if (!rawText || !rawText.trim()) {
+                container.innerHTML = '<div style="color:#64748b;font-size:0.9rem;">No solution available yet.</div>';
+                return;
+            }
+            let cleaned = rawText.replace(/\*\*/g,"").replace(/[#]{1,6}\s*/g,"")
+                .replace(/^---+$/gm,"").replace(/^\s*[-*]\s+/gm,"").trim();
+            const stepRegex = /^step\s*\d+\s*[:\-.]?\s*/i;
+            const allLines  = cleaned.split("\n").map(l=>l.trim()).filter(l=>l.length>0);
+            const stepLines = allLines.filter(l=>stepRegex.test(l));
+            let render = stepLines.length >= 2
+                ? stepLines
+                : allLines.filter(l=>l.length>10).slice(0,10);
+
+            const wrap = document.createElement("div");
+            wrap.className = "solution-steps";
+            if (render.length === 0) {
+                const div = document.createElement("div");
+                div.className = "solution-step";
+                div.innerHTML = `<div class="step-number">1</div>
+                    <div class="step-text" style="white-space:pre-line;">${cleaned}</div>`;
+                wrap.appendChild(div);
+            } else {
+                render.forEach((line,i) => {
+                    const text = line.replace(stepRegex,"").trim() || line;
+                    const div  = document.createElement("div");
+                    div.className = "solution-step";
+                    div.innerHTML = `<div class="step-number">${i+1}</div>
+                        <div class="step-text">${text}</div>`;
+                    wrap.appendChild(div);
+                });
+            }
+            container.innerHTML = "";
+            container.appendChild(wrap);
+        }
+
+        function handleCopy(btn) {
+            if (!_rawSolution) { showToast("No solution to copy","warning"); return; }
+            copyToClipboard(_rawSolution, btn);
+        }
+
+        // ── BATCH 2: Render detailed ticket history timeline ─────────────────
+        function renderDetailTimeline(ticket) {
+            const container = document.getElementById("timelineEvents");
+            const wrapper   = document.getElementById("detailTimeline");
+            if (!container || !wrapper) return;
+
+            const events = [];
+
+            // Event 1: Submitted
+            if (ticket.createdAt) {
+                events.push({
+                    dot:   { bg:"#4f46e5", color:"#fff" },
+                    icon:  "📝",
+                    label: "Ticket Submitted",
+                    time:  formatDateTime(ticket.createdAt),
+                    badge: null
+                });
+            }
+
+            // Event 2: AI Analyzed (a few seconds after submit)
+            if (ticket.createdAt) {
+                const isNonTech = ticket.aiResolutionType === "NON_TECHNICAL";
+                events.push({
+                    dot:   { bg:"#0ea5e9", color:"#fff" },
+                    icon:  "🤖",
+                    label: isNonTech ? "AI Detected Non-Technical Issue" : "AI Analysis Complete",
+                    time:  formatDateTime(ticket.createdAt) + " (approx.)",
+                    badge: ticket.aiConfidence != null && ticket.aiConfidence >= 0
+                        ? { text: ticket.aiConfidence + "% confidence", bg:"#ede9fe", color:"#5b21b6" }
+                        : null
+                });
+            }
+
+            // Event 3: Admin Review (if applicable)
+            if (ticket.aiResolutionType === "AI_HUMAN" || ticket.aiResolutionType === "MANUAL") {
+                events.push({
+                    dot:   { bg:"#f59e0b", color:"#fff" },
+                    icon:  "👤",
+                    label: "Escalated to Admin for Review",
+                    time:  ticket.createdAt ? formatDateTime(ticket.createdAt) + " (queued)" : "—",
+                    badge: { text:"Admin Review", bg:"#fef3c7", color:"#92400e" }
+                });
+            }
+
+            // Event 4: Resolved
+            if (ticket.resolvedAt || ticket.status === "RESOLVED") {
+                const resolvedTime = ticket.resolvedAt
+                    ? formatDateTime(ticket.resolvedAt)
+                    : "Resolved";
+
+                // Calculate duration
+                let durationText = null;
+                if (ticket.createdAt && ticket.resolvedAt) {
+                    const ms   = new Date(ticket.resolvedAt) - new Date(ticket.createdAt);
+                    const secs = Math.floor(ms / 1000);
+                    if (secs < 60)       durationText = secs + "s";
+                    else if (secs < 3600) durationText = Math.floor(secs/60) + "m";
+                    else                  durationText = Math.floor(secs/3600) + "h " + Math.floor((secs%3600)/60) + "m";
+                }
+
+                const typeLabel = {
+                    "AUTO":         { text:"AI Auto-Resolved", bg:"#dcfce7", color:"#166534" },
+                    "AI_HUMAN":     { text:"AI + Admin",        bg:"#fef3c7", color:"#92400e" },
+                    "MANUAL":       { text:"Admin Resolved",    bg:"#dbeafe", color:"#1e40af" },
+                    "NON_TECHNICAL":{ text:"AI Rejected",       bg:"#fee2e2", color:"#991b1b" }
+                }[ticket.aiResolutionType] || { text:"Resolved", bg:"#dcfce7", color:"#166534" };
+
+                events.push({
+                    dot:   { bg:"#10b981", color:"#fff" },
+                    icon:  "✅",
+                    label: "Ticket Resolved",
+                    time:  resolvedTime,
+                    badge: typeLabel,
+                    duration: durationText
+                });
+            }
+
+            container.innerHTML = events.map((ev, i) => `
+                <div class="timeline-event">
+                    <div class="timeline-dot" style="background:${ev.dot.bg};color:${ev.dot.color};">
+                        <span style="font-size:0.8rem;">${i+1}</span>
+                    </div>
+                    <div class="timeline-content">
+                        <div class="timeline-label">${ev.icon} ${ev.label}
+                            ${ev.badge ? `<span style="margin-left:0.5rem;padding:2px 8px;
+                                border-radius:99px;font-size:0.7rem;font-weight:700;
+                                background:${ev.badge.bg};color:${ev.badge.color};">
+                                ${ev.badge.text}</span>` : ""}
+                        </div>
+                        <div class="timeline-time">${ev.time}</div>
+                    </div>
+                    ${ev.duration ? `<div class="timeline-duration"
+                        style="background:#f0fdf4;color:#166534;">⏱ ${ev.duration}</div>` : ""}
+                </div>
+            `).join("");
+
+            wrapper.style.display = "block";
+        }
+
+        function formatDateTime(dateStr) {
+            if (!dateStr) return "—";
+            const d = new Date(dateStr);
+            return d.toLocaleDateString("en-IN", { day:"2-digit", month:"short", year:"numeric" })
+                 + " " + d.toLocaleTimeString("en-IN", { hour:"2-digit", minute:"2-digit" });
+        }
+
+        // ── BATCH 2: Star rating interactions ────────────────────────────────
+        const ratingLabels = {
+            1: "😞 Poor — solution didn't help",
+            2: "😐 Fair — partially helpful",
+            3: "🙂 Good — mostly resolved my issue",
+            4: "😊 Great — very helpful!",
+            5: "🤩 Excellent — perfect solution!"
+        };
+
+        function hoverRating(val) {
+            document.querySelectorAll(".star").forEach((s,i) => {
+                s.classList.toggle("hover-active", i < val);
+            });
+            const lbl = document.getElementById("ratingLabel");
+            if (lbl) lbl.textContent = ratingLabels[val] || "";
+        }
+
+        function unhoverRating() {
+            document.querySelectorAll(".star").forEach(s => s.classList.remove("hover-active"));
+            const lbl = document.getElementById("ratingLabel");
+            if (lbl) lbl.textContent = _selectedRating > 0 ? ratingLabels[_selectedRating] : "";
+        }
+
+        function selectRating(val) {
+            _selectedRating = val;
+            document.querySelectorAll(".star").forEach((s,i) => {
+                s.classList.toggle("active", i < val);
+            });
+            const lbl = document.getElementById("ratingLabel");
+            if (lbl) lbl.textContent = ratingLabels[val] || "";
+            const btn = document.getElementById("ratingSubmitBtn");
+            if (btn) btn.disabled = false;
+        }
+
+        async function submitRating() {
+            if (!_selectedRating || !_currentTicketId) return;
+            const comment = document.getElementById("ratingComment").value.trim();
+            const btn     = document.getElementById("ratingSubmitBtn");
+            if (btn) { btn.disabled = true; btn.textContent = "Submitting..."; }
+
+            try {
+                const res = await fetch(`${API_BASE_URL}/tickets/${_currentTicketId}/rate`, {
+                    method: "PATCH",
+                    headers: getAuthHeaders(),
+                    body: JSON.stringify({ rating: _selectedRating, comment: comment || null })
+                });
+                if (!res.ok) throw new Error("Failed");
+
+                // Show thank-you message
+                document.getElementById("ratingCard").style.display = "none";
+                const done = document.getElementById("ratingDone");
+                if (done) {
+                    document.getElementById("ratingDoneStars").textContent =
+                        "⭐".repeat(_selectedRating);
+                    done.style.display = "flex";
+                }
+                showToast("Thank you for your feedback! 🙏", "success");
+            } catch (e) {
+                showToast("Could not submit rating. Try again.", "error");
+                if (btn) { btn.disabled = false; btn.textContent = "Submit Rating"; }
+            }
+        }
+
+        // ── Main load ─────────────────────────────────────────────────────────
+        document.addEventListener("DOMContentLoaded", () => {
+            loadUserProfile();
+            const id = localStorage.getItem("currentViewTicketId");
+            if (!id) return;
+            _currentTicketId = id;
+
+            fetch(`${API_BASE_URL}/tickets/${id}`, { headers: getAuthHeaders() })
+                .then(r => r.json())
+                .then(ticket => {
+                    const set = (elId,val) => {
+                        const el = document.getElementById(elId);
+                        if(el) el.innerText = val || "—";
+                    };
+                    set("view-ticket-id",       ticket.ticketNumber || "#" + ticket.id);
+                    set("view-ticket-date",     formatDate(ticket.createdAt));
+                    set("view-ticket-category", ticket.category || "General");
+                    set("view-ticket-title",    ticket.title);
+                    set("view-ticket-desc",     ticket.description);
+
+                    renderSolutionSteps(ticket.solution || "", "view-ticket-solution");
+                    renderStatusTimeline(ticket);
+
+                    // BATCH 2: Detailed timeline
+                    renderDetailTimeline(ticket);
+
+                    // BATCH 5A: Show resolver admin for admin-resolved tickets
+                    if (ticket.resolvedByAdminName &&
+                        ticket.aiResolutionType !== "AUTO" &&
+                        ticket.aiResolutionType !== "NON_TECHNICAL") {
+                        var card = document.getElementById("resolverAdminCard");
+                        var info = document.getElementById("resolverAdminInfo");
+                        if (card) card.style.display = "flex";
+                        if (info) {
+                            var adminRvaId = ticket.resolvedByAdminId
+                                ? " · RVA-" + String(ticket.resolvedByAdminId).padStart(4,"0")
+                                : "";
+                            info.textContent = ticket.resolvedByAdminName + adminRvaId;
+                        }
+                    }
+
+                    // Resolution indicator
+                    const dot  = document.getElementById("indicatorDot");
+                    const text = document.getElementById("indicator-type-text");
+                    const isApiUnavailable = ticket.aiResolutionType === "MANUAL" &&
+                        (ticket.aiConfidence === null || ticket.aiConfidence === undefined);
+
+                    if      (ticket.aiResolutionType === "AUTO")          { if(dot) dot.className="indicator-color bg-green";  if(text) text.innerText="Solved automatically by AI"; }
+                    else if (ticket.aiResolutionType === "AI_HUMAN")      { if(dot) dot.className="indicator-color bg-yellow"; if(text) text.innerText="AI suggestion reviewed by support team"; }
+                    else if (ticket.aiResolutionType === "NON_TECHNICAL") { if(dot) dot.className="indicator-color bg-red";    if(text) text.innerText="Non-technical issue — auto-escalated by AI"; }
+                    else if (isApiUnavailable)                            { if(dot) dot.className="indicator-color bg-red";    if(text) text.innerText="AI was unavailable — resolved manually by admin"; }
+                    else                                                  { if(dot) dot.className="indicator-color bg-red";    if(text) text.innerText="Manually resolved by support team"; }
+
+                    // BATCH 2: Show rating widget if not non-technical and not already rated
+                    if (ticket.aiResolutionType !== "NON_TECHNICAL") {
+                        if (ticket.satisfactionRating) {
+                            // Already rated — show done message
+                            const done = document.getElementById("ratingDone");
+                            if (done) {
+                                document.getElementById("ratingDoneStars").textContent =
+                                    "⭐".repeat(ticket.satisfactionRating);
+                                done.style.display = "flex";
+                            }
+                        } else {
+                            // Not yet rated — show widget
+                            const card = document.getElementById("ratingCard");
+                            if (card) card.style.display = "block";
+                        }
+                    }
+                })
+                .catch(err => console.error("Solution load error:", err));
+        });
+    </script>
+</body>
+</html>

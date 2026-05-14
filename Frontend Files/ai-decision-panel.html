@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Decision Panel - ResolviaAI Admin</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="admin-dashboard.css">
+</head>
+<body class="admin-body">
+
+    <aside class="sidebar">
+        <div class="sidebar-header"><h2>ResolviaAI</h2></div>
+        <ul class="sidebar-menu">
+            <li><a href="admin-dashboard.html">Dashboard</a></li>
+            <li><a href="ticket-management.html">Ticket Management</a></li>
+            <li><a href="ai-decision-panel.html" class="active">AI Decision Panel</a></li>
+                        <li><a href="admin-activity-log.html">Activity Log</a></li>
+<li style="margin-top:auto; padding-top:1rem; border-top:1px solid rgba(255,255,255,0.1);">
+                <a href="admin-profile.html">My Profile</a>
+            </li>
+            <li><a href="admin-settings.html">Settings</a></li>
+        </ul>
+    </aside>
+
+    <div class="main-wrapper">
+        <nav class="admin-nav">
+            <div class="nav-title">AI Intelligence Statistics</div>
+            <div class="nav-right">
+                <div class="user-profile">
+                    <div class="avatar-circle" id="adminAvatar">A</div>
+                    <span class="user-name" id="adminNameText">Admin</span>
+                </div>
+                <button class="btn-logout" onclick="handleLogout()">Logout</button>
+            </div>
+        </nav>
+
+        <main class="admin-content">
+
+            <!-- Top Row: Confidence Score + Counts + Top Problems -->
+            <section style="display:grid; grid-template-columns:2fr 1fr; gap:1.5rem; margin-bottom:2rem;">
+
+                <div style="display:flex; flex-direction:column; gap:1.5rem;">
+                    <!-- Master Score Card -->
+                    <div class="card" style="padding:2rem; background:linear-gradient(135deg, var(--primary-accent), #6366f1); color:white; display:flex; align-items:center; justify-content:space-between;">
+                        <div>
+                            <h2 style="font-size:1.25rem; font-weight:500; margin-top:0; margin-bottom:0.5rem; opacity:0.9;">System AI Confidence Score</h2>
+                            <p style="margin:0; font-size:0.95rem; opacity:0.8;">Percentage of tickets resolved automatically by AI</p>
+                        </div>
+                        <div id="ai-score-value" style="font-size:3.5rem; font-weight:700; line-height:1;">—</div>
+                    </div>
+
+                    <!-- AI vs Human counts -->
+                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:1.5rem;">
+                        <div class="card" style="padding:1.75rem; border-left:4px solid var(--status-aisolved);">
+                            <h3 style="font-size:0.9rem; color:#6b7280; font-weight:600; text-transform:uppercase; margin-top:0; margin-bottom:0.5rem;">AI Resolved</h3>
+                            <div id="ai-solved-count" style="font-size:2.2rem; font-weight:700; color:var(--text-color);">—</div>
+                        </div>
+                        <div class="card" style="padding:1.75rem; border-left:4px solid var(--status-human);">
+                            <h3 style="font-size:0.9rem; color:#6b7280; font-weight:600; text-transform:uppercase; margin-top:0; margin-bottom:0.5rem;">Needs Human Review</h3>
+                            <div id="human-solved-count" style="font-size:2.2rem; font-weight:700; color:var(--text-color);">—</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Top Problems (from tickets data) -->
+                <div class="card" style="padding:1.75rem;">
+                    <h3 style="font-size:1.1rem; font-weight:600; margin-top:0; margin-bottom:1.5rem; color:var(--text-color); border-bottom:1px solid var(--border-color); padding-bottom:1rem;">
+                        Top Categories
+                    </h3>
+                    <div id="topCategoriesContainer" style="display:flex; flex-direction:column; gap:1.25rem;">
+                        <div style="color:#6b7280; font-size:0.9rem;">Loading...</div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Bottom Stats Row -->
+            <section style="display:grid; grid-template-columns:repeat(3,1fr); gap:1.5rem; margin-bottom:2rem;">
+                <div class="card" style="padding:1.5rem; text-align:center;">
+                    <h4 style="font-size:0.85rem; color:#6b7280; font-weight:600; text-transform:uppercase; margin-bottom:0.5rem; margin-top:0;">Total Tickets</h4>
+                    <div id="stat-total" style="font-size:1.5rem; font-weight:700; color:var(--text-color);">—</div>
+                </div>
+                <div class="card" style="padding:1.5rem; text-align:center;">
+                    <h4 style="font-size:0.85rem; color:#6b7280; font-weight:600; text-transform:uppercase; margin-bottom:0.5rem; margin-top:0;">This Month</h4>
+                    <div id="stat-month" style="font-size:1.5rem; font-weight:700; color:var(--text-color);">—</div>
+                </div>
+                <div class="card" style="padding:1.5rem; text-align:center;">
+                    <h4 style="font-size:0.85rem; color:#6b7280; font-weight:600; text-transform:uppercase; margin-bottom:0.5rem; margin-top:0;">Open Tickets</h4>
+                    <div id="stat-open" style="font-size:1.5rem; font-weight:700; color:var(--primary-accent);">—</div>
+                </div>
+            </section>
+
+            <!-- BATCH 2: Resolution Time Tracking -->
+            <section style="margin-bottom:2rem;">
+                <div class="card" style="padding:1.75rem;">
+                    <h3 style="font-size:1.1rem;font-weight:600;margin-top:0;margin-bottom:0.35rem;color:var(--text-color);">
+                        ⏱ Resolution Time Comparison
+                    </h3>
+                    <p style="font-size:0.85rem;color:#6b7280;margin:0 0 1.5rem;">
+                        Average time from ticket submission to resolution — AI vs Human
+                    </p>
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;">
+
+                        <!-- AI Resolution Time -->
+                        <div style="background:linear-gradient(135deg,rgba(16,185,129,0.1),rgba(16,185,129,0.05));
+                            border:1px solid rgba(16,185,129,0.3);border-radius:12px;padding:1.5rem;text-align:center;">
+                            <div style="font-size:0.82rem;font-weight:600;text-transform:uppercase;
+                                letter-spacing:0.06em;color:#059669;margin-bottom:0.5rem;">
+                                🤖 AI Auto-Resolved
+                            </div>
+                            <div id="avgTimeAI" style="font-size:2.2rem;font-weight:800;color:#10b981;line-height:1;margin-bottom:0.35rem;">—</div>
+                            <div style="font-size:0.78rem;color:#6b7280;">average resolution time</div>
+                        </div>
+
+                        <!-- Human Resolution Time -->
+                        <div style="background:linear-gradient(135deg,rgba(99,102,241,0.1),rgba(99,102,241,0.05));
+                            border:1px solid rgba(99,102,241,0.3);border-radius:12px;padding:1.5rem;text-align:center;">
+                            <div style="font-size:0.82rem;font-weight:600;text-transform:uppercase;
+                                letter-spacing:0.06em;color:#4338ca;margin-bottom:0.5rem;">
+                                👤 Admin Resolved
+                            </div>
+                            <div id="avgTimeHuman" style="font-size:2.2rem;font-weight:800;color:#6366f1;line-height:1;margin-bottom:0.35rem;">—</div>
+                            <div style="font-size:0.78rem;color:#6b7280;">average resolution time</div>
+                        </div>
+
+                    </div>
+                    <!-- Insight bar -->
+                    <div id="resolutionInsight" style="margin-top:1rem;padding:0.85rem 1.25rem;
+                        background:var(--bg-color);border-radius:8px;
+                        font-size:0.85rem;color:#6b7280;display:none;">
+                    </div>
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    <script src="common.js"></script>
+    <script src="theme.js"></script>
+    <script src="theme.js"></script>
+    <script src="admin-dashboard.js"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", async () => {
+            await loadAdminProfile();
+            await loadPanelData();
+        });
+
+        async function loadPanelData() {
+            try {
+                // Load stats
+                const statsRes = await fetch(`${API_BASE_URL}/admin/stats`, {
+                    headers: getAuthHeaders()
+                });
+
+                if (!statsRes.ok) {
+                    showToast("Failed to load AI stats", "error");
+                    return;
+                }
+
+                const stats = await statsRes.json();
+
+                const total    = stats.totalTickets || 0;
+                const aiCount  = stats.aiResolved   || 0;
+                const score    = total > 0 ? Math.round((aiCount / total) * 100) : 0;
+                const humanCount = total - aiCount;
+
+                document.getElementById("ai-score-value").innerText    = score + "%";
+                document.getElementById("ai-solved-count").innerText   = aiCount;
+                document.getElementById("human-solved-count").innerText = humanCount;
+                document.getElementById("stat-total").innerText        = total;
+                document.getElementById("stat-month").innerText        = stats.thisMonth || 0;
+                document.getElementById("stat-open").innerText         = stats.openTickets || 0;
+
+                // BATCH 2: Resolution Time display
+                function formatDuration(minutes) {
+                    if (minutes < 0) return "No data yet";
+                    if (minutes < 1) return Math.round(minutes * 60) + "s";
+                    if (minutes < 60) return Math.round(minutes) + "m";
+                    const h = Math.floor(minutes / 60);
+                    const m = Math.round(minutes % 60);
+                    return m > 0 ? h + "h " + m + "m" : h + "h";
+                }
+
+                const aiTime    = stats.avgResolutionMinutesAI    ?? -1;
+                const humanTime = stats.avgResolutionMinutesHuman  ?? -1;
+
+                document.getElementById("avgTimeAI").innerText    = formatDuration(aiTime);
+                document.getElementById("avgTimeHuman").innerText = formatDuration(humanTime);
+
+                // Show insight if both have data
+                if (aiTime > 0 && humanTime > 0) {
+                    const ratio   = Math.round(humanTime / (aiTime > 0 ? aiTime : 1));
+                    const insight = document.getElementById("resolutionInsight");
+                    if (insight) {
+                        insight.style.display = "block";
+                        insight.innerHTML = `💡 <strong>Insight:</strong> AI resolves tickets
+                            <strong style="color:#10b981;">${ratio}x faster</strong> than human admin review.
+                            That's ${formatDuration(humanTime - aiTime)} saved per ticket on average.`;
+                    }
+                }
+
+                // Load tickets for category breakdown
+                const ticketsRes = await fetch(`${API_BASE_URL}/admin/tickets`, {
+                    headers: getAuthHeaders()
+                });
+
+                if (!ticketsRes.ok) return;
+
+                const tickets = await ticketsRes.json();
+                renderTopCategories(tickets);
+
+            } catch (err) {
+                console.error(err);
+                showToast("Error loading panel data", "error");
+            }
+        }
+
+        function renderTopCategories(tickets) {
+            // Count tickets by category
+            const catMap = {};
+            tickets.forEach(t => {
+                const cat = t.category || "General";
+                catMap[cat] = (catMap[cat] || 0) + 1;
+            });
+
+            // Sort by count descending
+            const sorted = Object.entries(catMap)
+                .sort((a, b) => b[1] - a[1])
+                .slice(0, 5);
+
+            const colors = [
+                { bg: "#fee2e2", color: "#dc2626" },
+                { bg: "#fef3c7", color: "#d97706" },
+                { bg: "#e0e7ff", color: "#4338ca" },
+                { bg: "#dcfce7", color: "#16a34a" },
+                { bg: "#f3e8ff", color: "#9333ea" }
+            ];
+
+            const container = document.getElementById("topCategoriesContainer");
+
+            if (sorted.length === 0) {
+                container.innerHTML = '<div style="color:#6b7280; font-size:0.9rem;">No data yet.</div>';
+                return;
+            }
+
+            container.innerHTML = sorted.map(([cat, count], i) => {
+                const c = colors[i] || colors[0];
+                return `
+                    <div style="display:flex; align-items:center; gap:1rem;">
+                        <div style="width:32px; height:32px; border-radius:6px; background-color:${c.bg}; color:${c.color}; display:flex; align-items:center; justify-content:center; font-weight:700; flex-shrink:0;">
+                            ${i + 1}
+                        </div>
+                        <div style="flex:1;">
+                            <span style="font-weight:500; font-size:0.95rem; color:var(--text-color);">${cat}</span>
+                        </div>
+                        <div style="font-weight:600; color:#6b7280; font-size:0.9rem;">${count}</div>
+                    </div>
+                `;
+            }).join("");
+        }
+    </script>
+
+    <script>
+    // BATCH 5A: Track admin last-seen for online/offline status
+    (function() {
+        var userId = localStorage.getItem("currentUserId");
+        if (userId && localStorage.getItem("role") === "ADMIN") {
+            localStorage.setItem("adminLastSeen_" + userId, Date.now().toString());
+        }
+    })();
+    </script>
+</body>
+</html>

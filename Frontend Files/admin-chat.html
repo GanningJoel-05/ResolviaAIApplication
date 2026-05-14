@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Chat - ResolviaAI</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="admin-dashboard.css">
+    <style>
+        .profile-wrapper { max-width: 760px; margin: 0 auto; }
+ 
+        /* Chat container */
+        .chat-wrap {
+            display: flex; flex-direction: column;
+            height: calc(100vh - 130px); /* full height minus topbar + back link */
+            border: 1px solid var(--border-color); border-radius: 14px; overflow: hidden;
+        }
+        /* Header */
+        .chat-hdr {
+            background: var(--card-bg); padding: 0.9rem 1.25rem;
+            border-bottom: 1px solid var(--border-color);
+            display: flex; align-items: center; gap: 0.9rem; flex-shrink: 0;
+        }
+        [data-theme="dark"] .chat-hdr { background: #1e293b; border-color: #334155; }
+        .chat-hdr-av {
+            width:42px; height:42px; border-radius:50%;
+            background:linear-gradient(135deg,#4f46e5,#6366f1);
+            color:#fff; font-size:1rem; font-weight:800;
+            display:flex; align-items:center; justify-content:center;
+            flex-shrink:0; position:relative; overflow:hidden;
+        }
+        .chat-hdr-av img { width:42px; height:42px; border-radius:50%; object-fit:cover; }
+        .chat-hdr-dot {
+            position:absolute; bottom:1px; right:1px; width:10px; height:10px;
+            border-radius:50%; border:2px solid var(--card-bg); z-index:2;
+        }
+        [data-theme="dark"] .chat-hdr-dot { border-color:#1e293b; }
+        .chat-hdr-name { font-weight:700; font-size:0.95rem; color:var(--text-color); }
+        [data-theme="dark"] .chat-hdr-name { color:#f1f5f9; }
+        .chat-hdr-sub  { font-size:0.75rem; color:#6b7280; margin-top:1px; }
+        .live-badge    { margin-left:auto; font-size:0.72rem; color:#10b981; font-weight:600; }
+        /* Messages body */
+        .chat-body {
+            flex:1; overflow-y:auto; padding:1rem 1.25rem;
+            background:var(--background); display:flex; flex-direction:column; gap:0.5rem;
+        }
+        [data-theme="dark"] .chat-body { background:#0f172a; }
+        /* Input footer */
+        .chat-foot {
+            background:var(--card-bg); padding:0.75rem 1rem;
+            border-top:1px solid var(--border-color);
+            display:flex; gap:0.6rem; align-items:flex-end; flex-shrink:0;
+        }
+        [data-theme="dark"] .chat-foot { background:#1e293b; border-color:#334155; }
+        .chat-ta {
+            flex:1; padding:0.55rem 1rem; border:1px solid var(--border-color);
+            border-radius:22px; font-size:0.9rem; font-family:inherit;
+            background:var(--background); color:var(--text-color);
+            resize:none; max-height:110px; min-height:40px; line-height:1.4; outline:none;
+        }
+        [data-theme="dark"] .chat-ta { background:#0f172a; color:#f1f5f9; border-color:#334155; }
+        .chat-ta:focus { border-color:var(--primary-accent); }
+        .chat-send {
+            padding:0.55rem 1.15rem; border-radius:22px; border:none;
+            background:linear-gradient(135deg,#4f46e5,#6366f1); color:#fff;
+            font-size:0.88rem; font-weight:700; cursor:pointer; font-family:inherit;
+            transition:opacity 0.2s; flex-shrink:0;
+        }
+        .chat-send:hover { opacity:0.85; }
+        /* Bubbles */
+        .msg-row { display:flex; align-items:flex-end; gap:0.4rem; }
+        .msg-row.mine   { flex-direction:row-reverse; }
+        .msg-row.theirs { flex-direction:row; }
+        .msg-bub {
+            max-width:65%; padding:0.6rem 0.9rem; border-radius:16px;
+            font-size:0.88rem; line-height:1.45; position:relative; word-break:break-word;
+        }
+        .msg-row.mine   .msg-bub {
+            background:linear-gradient(135deg,#4f46e5,#6366f1); color:#fff;
+            border-bottom-right-radius:4px;
+        }
+        .msg-row.theirs .msg-bub {
+            background:var(--card-bg); color:var(--text-color);
+            border:1px solid var(--border-color); border-bottom-left-radius:4px;
+        }
+        [data-theme="dark"] .msg-row.theirs .msg-bub { background:#1e293b; border-color:#334155; color:#f1f5f9; }
+        .msg-del  { font-style:italic; opacity:0.5; font-size:0.8rem; }
+        .msg-edit-tag { font-size:0.68rem; opacity:0.6; margin-top:2px; }
+        .msg-time { font-size:0.67rem; opacity:0.6; margin-top:3px; white-space:nowrap; display:block; }
+        /* Action buttons — inline below message, visible on bubble hover */
+        .msg-actions {
+            display: flex; gap: 0.3rem; margin-top: 4px;
+            opacity: 0; pointer-events: none;
+            transition: opacity 0.15s ease;
+            justify-content: flex-end;
+        }
+        /* Keep buttons visible while hovering the bubble OR the buttons themselves */
+        .msg-bub:hover .msg-actions,
+        .msg-actions:hover {
+            opacity: 1; pointer-events: auto;
+        }
+        .act-btn {
+            padding: 2px 9px; border-radius: 5px; border: none;
+            background: rgba(255,255,255,0.18); color: #fff;
+            font-size: 0.68rem; cursor: pointer; font-family: inherit;
+            white-space: nowrap; transition: background 0.15s;
+        }
+        .act-btn:hover { background: rgba(255,255,255,0.32); }
+        .act-del { background: rgba(220,38,38,0.55) !important; }
+        .act-del:hover { background: rgba(220,38,38,0.75) !important; }
+        .date-div {
+            text-align:center; font-size:0.7rem; color:#9ca3af;
+            margin:0.5rem 0; font-weight:600;
+        }
+        .chat-empty {
+            flex:1; display:flex; flex-direction:column;
+            align-items:center; justify-content:center;
+            gap:0.5rem; color:#9ca3af; font-size:0.88rem; padding:2rem;
+        }
+ 
+        /* Edit modal */
+        .edit-modal-bg {
+            display:none; position:fixed; inset:0; z-index:99999;
+            background:rgba(0,0,0,0.5); align-items:center; justify-content:center; padding:1rem;
+        }
+        .edit-modal-box {
+            background:var(--card-bg); border-radius:14px; padding:1.5rem;
+            width:100%; max-width:440px; box-shadow:0 24px 64px rgba(0,0,0,0.3);
+        }
+        [data-theme="dark"] .edit-modal-box { background:#1e293b; }
+ 
+        /* Responsive */
+        @media (max-width:640px) {
+            .chat-wrap { height: calc(100vh - 120px); border-radius:10px; }
+            .msg-bub  { max-width:82%; }
+            .chat-hdr { padding:0.75rem 1rem; }
+            .chat-body { padding:0.75rem; }
+            .chat-foot { padding:0.6rem 0.75rem; }
+            .profile-wrapper { padding:0; }
+        }
+    </style>
+</head>
+<body class="admin-body">
+ 
+    <aside class="sidebar" id="adminSidebar">
+        <div class="sidebar-header"><h2>ResolviaAI</h2></div>
+        <ul class="sidebar-menu">
+            <li><a href="admin-dashboard.html">Dashboard</a></li>
+            <li><a href="ticket-management.html">Ticket Management</a></li>
+            <li><a href="ai-decision-panel.html">AI Decision Panel</a></li>
+                        <li><a href="admin-activity-log.html">Activity Log</a></li>
+<li class="active"><a href="admin-profile.html">My Profile</a></li>
+            <li><a href="admin-settings.html">Settings</a></li>
+        </ul>
+    </aside>
+ 
+    <div class="main-wrapper">
+        <nav class="admin-nav">
+            <div class="nav-title">Admin Chat</div>
+            <div class="nav-right">
+                <button class="theme-toggle-btn" onclick="toggleTheme()">🌙</button>
+                <div class="user-profile" onclick="window.location.href='admin-profile.html'" style="cursor:pointer;">
+                    <div class="avatar-circle" id="myAdminAvatar">A</div>
+                    <span class="user-name" id="myAdminNameText">Admin</span>
+                </div>
+                <button class="btn-logout" onclick="handleLogout()">Logout</button>
+            </div>
+        </nav>
+ 
+        <main class="admin-content">
+            <div class="profile-wrapper">
+                <a href="javascript:history.back()" style="display:inline-flex;align-items:center;gap:0.4rem;
+                    color:var(--primary-accent);font-size:0.88rem;text-decoration:none;
+                    margin-bottom:0.85rem;font-weight:600;">← Back</a>
+ 
+                <div class="chat-wrap">
+                    <!-- Chat Header -->
+                    <div class="chat-hdr">
+                        <div class="chat-hdr-av" id="chatHdrAv">A
+                            <span class="chat-hdr-dot" id="chatHdrDot" style="background:#94a3b8;"></span>
+                        </div>
+                        <div>
+                            <div class="chat-hdr-name" id="chatHdrName">Loading...</div>
+                            <div class="chat-hdr-sub"  id="chatHdrSub">Admin</div>
+                        </div>
+                        <span class="live-badge">🔄 Live</span>
+                    </div>
+ 
+                    <!-- Messages -->
+                    <div class="chat-body" id="chatBody">
+                        <div class="chat-empty">
+                            <span style="font-size:2rem;">💬</span>
+                            <span>Loading conversation...</span>
+                        </div>
+                    </div>
+ 
+                    <!-- Input Footer -->
+                    <div class="chat-foot">
+                        <textarea id="chatInput" class="chat-ta" rows="1"
+                            placeholder="Type a message... (Enter to send, Shift+Enter for new line)"
+                            onkeydown="handleChatKey(event)"
+                            oninput="autoResize(this)"></textarea>
+                        <button class="chat-send" onclick="sendMsg()">Send ➤</button>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+ 
+    <!-- Edit Modal -->
+    <div class="edit-modal-bg" id="editModal">
+        <div class="edit-modal-box">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
+                <span style="font-weight:700;font-size:0.95rem;color:var(--text-color);">✏️ Edit Message</span>
+                <button onclick="closeEdit()" style="background:none;border:none;cursor:pointer;
+                    color:#6b7280;font-size:1.2rem;line-height:1;">✕</button>
+            </div>
+            <textarea id="editInput" rows="3" style="width:100%;padding:0.6rem 0.85rem;
+                border:1px solid var(--border-color);border-radius:8px;font-size:0.9rem;
+                font-family:inherit;resize:vertical;background:var(--background);
+                color:var(--text-color);box-sizing:border-box;margin-bottom:0.85rem;"></textarea>
+            <div style="display:flex;gap:0.75rem;justify-content:flex-end;">
+                <button onclick="closeEdit()" style="padding:0.45rem 1.1rem;border-radius:8px;
+                    border:1px solid var(--border-color);background:transparent;color:var(--text-color);
+                    font-size:0.85rem;cursor:pointer;font-family:inherit;">Cancel</button>
+                <button onclick="submitEdit()" style="padding:0.45rem 1.25rem;border-radius:8px;
+                    border:none;background:#4f46e5;color:#fff;font-size:0.85rem;font-weight:700;
+                    cursor:pointer;font-family:inherit;">Save</button>
+            </div>
+        </div>
+    </div>
+ 
+    <script src="common.js"></script>
+    <script src="theme.js"></script>
+    <script src="admin-dashboard.js"></script>
+    <script>
+    let _myId = null, _myName = null, _otherId = null, _editId = null, _poll = null;
+ 
+    document.addEventListener("DOMContentLoaded", async () => {
+        if (!requireAdmin()) return;
+ 
+        // My profile
+        try {
+            const me = await fetch(API_BASE_URL + "/user/profile", { headers: getAuthHeaders() });
+            if (me.ok) {
+                const d = await me.json();
+                _myId = d.id; _myName = d.name;
+                const av = document.getElementById("myAdminAvatar");
+                const nm = document.getElementById("myAdminNameText");
+                if (av) av.textContent = (d.name||"A").charAt(0).toUpperCase();
+                if (nm) nm.textContent = "Admin: " + d.name;
+                if (d.id) { localStorage.setItem("currentUserId", d.id); localStorage.setItem("adminLastSeen_"+d.id, Date.now()); }
+            }
+        } catch(e) {}
+ 
+        _otherId = parseInt(localStorage.getItem("chatWithAdminId") || "0");
+        if (!_otherId) {
+            document.getElementById("chatHdrName").textContent = "No chat partner";
+            document.getElementById("chatBody").innerHTML = '<div class="chat-empty"><span style="font-size:2rem">⚠️</span><span>No admin selected. Go to an admin profile and click Message.</span></div>';
+            return;
+        }
+ 
+        // Load partner info
+        try {
+            const r = await fetch(API_BASE_URL + "/admin/admin-profile/" + _otherId, { headers: getAuthHeaders() });
+            if (r.ok) {
+                const d = await r.json();
+                document.getElementById("chatHdrName").textContent = d.name || "Admin";
+                const av  = document.getElementById("chatHdrAv");
+                const dot = av ? av.querySelector(".chat-hdr-dot") : null;
+                const photo = localStorage.getItem("profilePic_admin_" + _otherId);
+                if (photo && av) {
+                    av.innerHTML = `<img src="${photo}" style="width:42px;height:42px;border-radius:50%;object-fit:cover;">`;
+                    if (dot) av.appendChild(dot);
+                } else if (av) {
+                    av.textContent = (d.name||"A").charAt(0).toUpperCase();
+                    if (dot) av.appendChild(dot);
+                }
+                const lastSeen = parseInt(localStorage.getItem("adminLastSeen_" + _otherId) || "0");
+                const isOnline = (Date.now() - lastSeen) < 15*60*1000 && lastSeen > 0;
+                const hdrDot   = document.getElementById("chatHdrDot");
+                const sub      = document.getElementById("chatHdrSub");
+                if (hdrDot) hdrDot.style.background = isOnline ? "#10b981" : "#94a3b8";
+                if (sub)    sub.textContent = isOnline ? "🟢 Online" : "⚫ Offline";
+            }
+        } catch(e) {}
+ 
+        await loadMsgs(true);
+        _poll = setInterval(() => loadMsgs(false), 8000);
+    });
+ 
+    async function loadMsgs(scroll) {
+        try {
+            const res = await fetch(API_BASE_URL + "/chat/conversation/" + _otherId, { headers: getAuthHeaders() });
+            if (!res.ok) return;
+            const msgs = await res.json();
+            renderMsgs(msgs);
+            if (scroll) { const b = document.getElementById("chatBody"); if(b) b.scrollTop = b.scrollHeight; }
+        } catch(e) {}
+    }
+ 
+    function renderMsgs(msgs) {
+        const body = document.getElementById("chatBody");
+        if (!body) return;
+        if (!msgs || !msgs.length) {
+            body.innerHTML = '<div class="chat-empty"><span style="font-size:2rem">💬</span><span>No messages yet. Say hello!</span></div>';
+            return;
+        }
+        let html = "", lastDate = "";
+        msgs.forEach(m => {
+            const isMine = m.senderId === _myId;
+            const d = new Date(m.createdAt);
+            const ds = d.toLocaleDateString("en-IN", {day:"2-digit",month:"short",year:"numeric"});
+            const ts = d.toLocaleTimeString("en-IN", {hour:"2-digit",minute:"2-digit"});
+            if (ds !== lastDate) { html += `<div class="date-div">${ds}</div>`; lastDate = ds; }
+ 
+            const txt = m.deleted
+                ? '<span class="msg-del">🗑 This message was deleted</span>'
+                : esc(m.editedContent || m.content);
+            const editTag = (!m.deleted && m.editedContent) ? '<div class="msg-edit-tag">✏️ edited</div>' : "";
+            const actions = (isMine && !m.deleted)
+                ? `<div class="msg-actions">
+                      <button class="act-btn" onclick="openEdit(${m.id},${JSON.stringify(m.editedContent||m.content).replace(/'/g,"&#39;")})">✏️ Edit</button>
+                      <button class="act-btn act-del" onclick="delMsg(${m.id})">🗑 Delete</button>
+                   </div>` : "";
+ 
+            html += `<div class="msg-row ${isMine?'mine':'theirs'}">
+                <div class="msg-bub">
+                    <div>${txt}</div>
+                    ${editTag}
+                    <span class="msg-time">${ts}</span>
+                    ${actions}
+                </div>
+            </div>`;
+        });
+        const scrollPos = body.scrollTop;
+        const atBottom  = body.scrollHeight - scrollPos - body.clientHeight < 60;
+        body.innerHTML = html;
+        if (atBottom) body.scrollTop = body.scrollHeight;
+    }
+ 
+    async function sendMsg() {
+        const inp = document.getElementById("chatInput");
+        const txt = inp ? inp.value.trim() : "";
+        if (!txt || !_otherId) return;
+        inp.value = ""; inp.style.height = "40px";
+        try {
+            const res = await fetch(API_BASE_URL + "/chat/send", {
+                method:"POST", headers: getAuthHeaders(),
+                body: JSON.stringify({ toAdminId: _otherId, content: txt })
+            });
+            if (res.ok) await loadMsgs(true);
+            else { showToast("Failed to send","error"); inp.value = txt; }
+        } catch(e) { showToast("Server error","error"); }
+    }
+ 
+    function openEdit(id, txt) { _editId=id; const i=document.getElementById("editInput"); if(i) i.value=txt; document.getElementById("editModal").style.display="flex"; if(i) i.focus(); }
+    function closeEdit()       { document.getElementById("editModal").style.display="none"; _editId=null; }
+    async function submitEdit() {
+        if (!_editId) return;
+        const txt = (document.getElementById("editInput").value||"").trim();
+        if (!txt) { showToast("Cannot be empty","warning"); return; }
+        const res = await fetch(API_BASE_URL + "/chat/" + _editId + "/edit", {
+            method:"PATCH", headers: getAuthHeaders(), body: JSON.stringify({ content: txt })
+        });
+        if (!res.ok) { showToast("Edit failed","error"); return; }
+        closeEdit(); await loadMsgs(false);
+    }
+    async function delMsg(id) {
+        if (!confirm("Delete this message?")) return;
+        const res = await fetch(API_BASE_URL + "/chat/" + id, { method:"DELETE", headers: getAuthHeaders() });
+        if (!res.ok) { showToast("Delete failed","error"); return; }
+        await loadMsgs(false);
+    }
+ 
+    function handleChatKey(e) { if (e.key==="Enter" && !e.shiftKey) { e.preventDefault(); sendMsg(); } }
+    function autoResize(el)   { el.style.height="40px"; el.style.height=Math.min(el.scrollHeight,110)+"px"; }
+    function esc(s) {
+        if(!s) return "";
+        return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;")
+               .replace(/"/g,"&quot;").replace(/'/g,"&#39;").replace(/\n/g,"<br>");
+    }
+ 
+    document.addEventListener("click", e => { if(e.target===document.getElementById("editModal")) closeEdit(); });
+    window.addEventListener("beforeunload", () => { if(_poll) clearInterval(_poll); });
+    </script>
+    <script>(function(){var u=localStorage.getItem("currentUserId");if(u&&localStorage.getItem("role")==="ADMIN")localStorage.setItem("adminLastSeen_"+u,Date.now().toString());})();</script>
+</body>
+</html>

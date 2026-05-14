@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Activity Log - ResolviaAI Admin</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="admin-dashboard.css">
+    <style>
+        .log-filters {
+            display: flex; align-items: center; gap: 0.6rem;
+            flex-wrap: wrap; margin-bottom: 1.25rem;
+        }
+        .log-filter-btn {
+            padding: 0.38rem 1rem; border-radius: 99px; font-size: 0.82rem;
+            font-weight: 600; border: 1px solid var(--border-color);
+            background: transparent; color: var(--text-color);
+            cursor: pointer; font-family: inherit; transition: all 0.15s;
+        }
+        .log-filter-btn:hover  { border-color: var(--primary-accent); color: var(--primary-accent); }
+        .log-filter-btn.active { background: var(--primary-accent); color: #fff; border-color: var(--primary-accent); }
+
+        .log-search {
+            margin-left: auto; padding: 0.4rem 0.9rem;
+            border: 1px solid var(--border-color); border-radius: 8px;
+            font-size: 0.85rem; background: var(--bg-color);
+            color: var(--text-color); font-family: inherit; width: 220px;
+        }
+        .log-search:focus { outline: none; border-color: var(--primary-accent); }
+        [data-theme="dark"] .log-search { background: #0f172a; }
+
+        .log-list { display: flex; flex-direction: column; gap: 0.6rem; }
+
+        .log-item {
+            display: flex; align-items: flex-start; gap: 1rem;
+            padding: 0.9rem 1.1rem; border-radius: 10px;
+            border: 1px solid var(--border-color);
+            background: var(--bg-color); transition: border-color 0.15s;
+        }
+        [data-theme="dark"] .log-item { background: #0f172a; }
+        .log-item:hover { border-color: var(--primary-accent); }
+
+        .log-icon {
+            width: 36px; height: 36px; border-radius: 8px; flex-shrink: 0;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1rem;
+        }
+        .log-icon.resolve  { background: #dcfce7; }
+        .log-icon.block    { background: #fee2e2; }
+        .log-icon.unblock  { background: #dbeafe; }
+        .log-icon.delete   { background: #fef3c7; }
+        [data-theme="dark"] .log-icon.resolve { background: #052e16; }
+        [data-theme="dark"] .log-icon.block   { background: #450a0a; }
+        [data-theme="dark"] .log-icon.unblock { background: #0c1a3a; }
+        [data-theme="dark"] .log-icon.delete  { background: #1c1208; }
+
+        .log-body { flex: 1; min-width: 0; }
+        .log-desc {
+            font-size: 0.9rem; font-weight: 500; color: var(--text-color);
+            line-height: 1.45; margin-bottom: 0.35rem;
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        }
+        .log-meta {
+            display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;
+            font-size: 0.78rem; color: #6b7280;
+        }
+        .log-admin-badge {
+            display: inline-flex; align-items: center; gap: 0.3rem;
+            background: #ede9fe; color: #5b21b6;
+            padding: 2px 9px; border-radius: 99px;
+            font-size: 0.75rem; font-weight: 700;
+        }
+        [data-theme="dark"] .log-admin-badge { background: #2e1065; color: #c4b5fd; }
+        .log-ai-badge {
+            background: #dcfce7; color: #166534;
+            padding: 2px 9px; border-radius: 99px;
+            font-size: 0.75rem; font-weight: 700;
+        }
+        [data-theme="dark"] .log-ai-badge { background: #052e16; color: #86efac; }
+
+        .log-time { margin-left: auto; font-size: 0.78rem; color: #94a3b8; white-space: nowrap; }
+
+        .log-empty {
+            text-align: center; padding: 3rem; color: #6b7280; font-size: 0.95rem;
+        }
+
+        .log-pagination {
+            display: flex; align-items: center; justify-content: space-between;
+            margin-top: 1rem; flex-wrap: wrap; gap: 0.5rem;
+        }
+        .log-pagination span { font-size: 0.83rem; color: #6b7280; }
+        .log-pg-btns { display: flex; gap: 0.35rem; align-items: center; }
+        .log-pg-btn {
+            padding: 0.32rem 0.7rem; border-radius: 6px; font-size: 0.82rem;
+            font-weight: 500; cursor: pointer; font-family: inherit;
+            border: 1px solid var(--border-color); background: transparent;
+            color: var(--text-color); transition: all 0.15s;
+        }
+        .log-pg-btn:disabled   { opacity: 0.35; cursor: not-allowed; }
+        .log-pg-btn.active     { background: var(--primary-accent); color: #fff; border-color: var(--primary-accent); }
+        .log-pg-btn:not(:disabled):not(.active):hover {
+            border-color: var(--primary-accent); color: var(--primary-accent);
+        }
+
+        .stats-row {
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+            gap: 1rem; margin-bottom: 1.5rem;
+        }
+        .stat-mini {
+            background: var(--card-bg); border: 1px solid var(--border-color);
+            border-radius: 10px; padding: 1rem 1.1rem; text-align: center;
+        }
+        [data-theme="dark"] .stat-mini { background: #1e293b; border-color: #334155; }
+        .stat-mini-num  { font-size: 1.6rem; font-weight: 800; color: var(--primary-accent); line-height: 1; }
+        .stat-mini-lbl  { font-size: 0.72rem; font-weight: 700; text-transform: uppercase;
+                          letter-spacing: 0.05em; color: #6b7280; margin-top: 0.3rem; }
+    </style>
+</head>
+<body class="admin-body">
+
+    <aside class="sidebar" id="adminSidebar">
+        <div class="sidebar-header"><h2>ResolviaAI</h2></div>
+        <ul class="sidebar-menu">
+            <li><a href="admin-dashboard.html">Dashboard</a></li>
+            <li><a href="ticket-management.html">Ticket Management</a></li>
+            <li><a href="ai-decision-panel.html">AI Decision Panel</a></li>
+            <li class="active"><a href="admin-activity-log.html">Activity Log</a></li>
+            <li><a href="admin-profile.html">My Profile</a></li>
+            <li><a href="admin-settings.html">Settings</a></li>
+        </ul>
+    </aside>
+
+    <div class="main-wrapper">
+        <nav class="admin-nav">
+            <div class="nav-title">Activity Log</div>
+            <div class="nav-right">
+                <button class="theme-toggle-btn" onclick="toggleTheme()">🌙</button>
+                <div class="user-profile" onclick="window.location.href='admin-profile.html'" style="cursor:pointer;">
+                    <div class="avatar-circle" id="adminAvatar">A</div>
+                    <span class="user-name" id="adminNameText">Admin</span>
+                </div>
+                <button class="btn-logout" onclick="handleLogout()">Logout</button>
+            </div>
+        </nav>
+
+        <main class="admin-content">
+
+            <!-- Summary stats -->
+            <div class="stats-row" id="logStatsRow">
+                <div class="stat-mini">
+                    <div class="stat-mini-num" id="statTotal">—</div>
+                    <div class="stat-mini-lbl">Total Actions</div>
+                </div>
+                <div class="stat-mini">
+                    <div class="stat-mini-num" style="color:#10b981;" id="statResolved">—</div>
+                    <div class="stat-mini-lbl">Tickets Resolved</div>
+                </div>
+                <div class="stat-mini">
+                    <div class="stat-mini-num" style="color:#ef4444;" id="statBlocked">—</div>
+                    <div class="stat-mini-lbl">Users Blocked</div>
+                </div>
+                <div class="stat-mini">
+                    <div class="stat-mini-num" style="color:#6366f1;" id="statUnblocked">—</div>
+                    <div class="stat-mini-lbl">Users Unblocked</div>
+                </div>
+                <div class="stat-mini">
+                    <div class="stat-mini-num" style="color:#f59e0b;" id="statDeleted">—</div>
+                    <div class="stat-mini-lbl">Accounts Deleted</div>
+                </div>
+            </div>
+
+            <!-- Log card -->
+            <div class="card" style="padding:1.5rem;">
+
+                <!-- Header -->
+                <div style="display:flex;align-items:center;justify-content:space-between;
+                    margin-bottom:1.1rem;flex-wrap:wrap;gap:0.75rem;">
+                    <div>
+                        <h3 style="margin:0;font-size:1.05rem;font-weight:700;color:var(--text-color);">
+                            📋 System Activity Log
+                        </h3>
+                        <p style="margin:0.2rem 0 0;font-size:0.82rem;color:#6b7280;">
+                            All admin actions across the system — newest first
+                        </p>
+                    </div>
+                    <div style="display:flex;align-items:center;gap:0.5rem;">
+                        <label style="font-size:0.82rem;color:#6b7280;font-weight:600;">View:</label>
+                        <select id="adminViewSelect" onchange="switchAdminView()"
+                            style="padding:0.38rem 0.75rem;border-radius:8px;font-size:0.82rem;
+                                   border:1px solid var(--border-color);background:var(--bg-color);
+                                   color:var(--text-color);font-family:inherit;cursor:pointer;">
+                            <option value="all">All Admins</option>
+                            <option value="me">My Actions Only</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Filters + Search -->
+                <div class="log-filters">
+                    <button class="log-filter-btn active" onclick="filterLogs('ALL', this)">All</button>
+                    <button class="log-filter-btn" onclick="filterLogs('TICKET_RESOLVED', this)">✅ Resolved</button>
+                    <button class="log-filter-btn" onclick="filterLogs('BLOCK', this)">🚫 Blocked</button>
+                    <button class="log-filter-btn" onclick="filterLogs('USER_UNBLOCKED', this)">✅ Unblocked</button>
+                    <button class="log-filter-btn" onclick="filterLogs('USER_DELETED', this)">🗑 Deleted</button>
+                    <input type="text" id="logSearch" class="log-search"
+                        placeholder="🔍 Search logs..."
+                        oninput="handleLogSearch(this.value)">
+                </div>
+
+                <!-- Log list -->
+                <div id="logList" class="log-list">
+                    <div class="log-empty">Loading activity log...</div>
+                </div>
+
+                <!-- Pagination -->
+                <div class="log-pagination" id="logPagination" style="display:none;"></div>
+            </div>
+
+        </main>
+    </div>
+
+    <script src="common.js"></script>
+    <script src="theme.js"></script>
+    <script src="admin-dashboard.js"></script>
+    <script>
+        var _allLogs      = [];
+        var _filteredLogs = [];
+        var _logPage      = 1;
+        const LOGS_PER_PAGE = 15;
+        var _activeFilter = "ALL";
+
+        document.addEventListener("DOMContentLoaded", async function() {
+            if (!requireAdmin()) return;
+            await loadAdminProfile();
+            await loadLogs();
+        });
+
+        async function loadLogs() {
+            try {
+                var view = document.getElementById("adminViewSelect").value;
+                var url  = view === "me"
+                    ? API_BASE_URL + "/admin/activity-log/me"
+                    : API_BASE_URL + "/admin/activity-log";
+
+                var res = await fetch(url, { headers: getAuthHeaders() });
+                if (!res.ok) {
+                    document.getElementById("logList").innerHTML =
+                        '<div class="log-empty">Failed to load activity log. Please try again.</div>';
+                    return;
+                }
+                _allLogs = await res.json();
+                computeStats(_allLogs);
+                applyFilterAndSearch();
+            } catch(e) {
+                document.getElementById("logList").innerHTML =
+                    '<div class="log-empty">Server error. Please refresh the page.</div>';
+            }
+        }
+
+        function switchAdminView() {
+            _logPage = 1;
+            _activeFilter = "ALL";
+            document.querySelectorAll(".log-filter-btn").forEach(b => b.classList.remove("active"));
+            document.querySelector(".log-filter-btn").classList.add("active");
+            document.getElementById("logSearch").value = "";
+            loadLogs();
+        }
+
+        function computeStats(logs) {
+            var total     = logs.length;
+            var resolved  = logs.filter(l => l.actionType === "TICKET_RESOLVED").length;
+            var blocked   = logs.filter(l => l.actionType === "USER_BLOCKED_TEMP"
+                                         || l.actionType === "USER_BLOCKED_PERM").length;
+            var unblocked = logs.filter(l => l.actionType === "USER_UNBLOCKED").length;
+            var deleted   = logs.filter(l => l.actionType === "USER_DELETED").length;
+
+            setText("statTotal",     total);
+            setText("statResolved",  resolved);
+            setText("statBlocked",   blocked);
+            setText("statUnblocked", unblocked);
+            setText("statDeleted",   deleted);
+        }
+
+        function setText(id, val) {
+            var el = document.getElementById(id);
+            if (el) el.textContent = val;
+        }
+
+        function filterLogs(type, btn) {
+            _activeFilter = type;
+            _logPage      = 1;
+            document.querySelectorAll(".log-filter-btn").forEach(b => b.classList.remove("active"));
+            if (btn) btn.classList.add("active");
+            applyFilterAndSearch();
+        }
+
+        function handleLogSearch(query) {
+            _logPage = 1;
+            applyFilterAndSearch(query);
+        }
+
+        function applyFilterAndSearch(query) {
+            if (query === undefined) {
+                query = document.getElementById("logSearch").value;
+            }
+            var q = query.toLowerCase().trim();
+
+            _filteredLogs = _allLogs.filter(function(log) {
+                // Type filter
+                if (_activeFilter !== "ALL") {
+                    if (_activeFilter === "BLOCK") {
+                        if (log.actionType !== "USER_BLOCKED_TEMP" && log.actionType !== "USER_BLOCKED_PERM") return false;
+                    } else {
+                        if (log.actionType !== _activeFilter) return false;
+                    }
+                }
+                // Search filter
+                if (q) {
+                    var haystack = (
+                        (log.description      || "") + " " +
+                        (log.adminName        || "") + " " +
+                        (log.targetUserName   || "") + " " +
+                        (log.targetTicketNumber || "")
+                    ).toLowerCase();
+                    if (!haystack.includes(q)) return false;
+                }
+                return true;
+            });
+
+            renderLogPage();
+        }
+
+        function renderLogPage() {
+            var total      = _filteredLogs.length;
+            var totalPages = Math.max(1, Math.ceil(total / LOGS_PER_PAGE));
+            _logPage       = Math.min(_logPage, totalPages);
+
+            var start  = (_logPage - 1) * LOGS_PER_PAGE;
+            var end    = Math.min(start + LOGS_PER_PAGE, total);
+            var paged  = _filteredLogs.slice(start, end);
+
+            var list = document.getElementById("logList");
+
+            if (total === 0) {
+                list.innerHTML = '<div class="log-empty">No log entries match your filter.</div>';
+                document.getElementById("logPagination").style.display = "none";
+                return;
+            }
+
+            list.innerHTML = paged.map(function(log) {
+                var iconClass = "resolve";
+                var iconEmoji = "✅";
+                if (log.actionType === "USER_BLOCKED_TEMP" || log.actionType === "USER_BLOCKED_PERM") {
+                    iconClass = "block"; iconEmoji = "🚫";
+                } else if (log.actionType === "USER_UNBLOCKED") {
+                    iconClass = "unblock"; iconEmoji = "🔓";
+                } else if (log.actionType === "USER_DELETED") {
+                    iconClass = "delete"; iconEmoji = "🗑";
+                }
+
+                var adminBadge = log.adminId === 0
+                    ? "<span class='log-ai-badge'>🤖 AI System</span>"
+                    : "<span class='log-admin-badge'>🛡 " + escapeHtml(log.adminName) + "</span>";
+
+                var targetInfo = "";
+                if (log.targetTicketNumber) {
+                    targetInfo = "<span>🎫 " + escapeHtml(log.targetTicketNumber) + "</span>";
+                }
+                if (log.targetUserName && !log.targetTicketNumber) {
+                    targetInfo = "<span>👤 " + escapeHtml(log.targetUserName) + "</span>";
+                }
+
+                var timeStr = formatLogTime(log.createdAt);
+
+                return "<div class='log-item'>" +
+                    "<div class='log-icon " + iconClass + "'>" + iconEmoji + "</div>" +
+                    "<div class='log-body'>" +
+                        "<div class='log-desc' title='" + escapeHtml(log.description) + "'>" +
+                            escapeHtml(log.description) +
+                        "</div>" +
+                        "<div class='log-meta'>" +
+                            adminBadge +
+                            targetInfo +
+                        "</div>" +
+                    "</div>" +
+                    "<div class='log-time'>" + timeStr + "</div>" +
+                "</div>";
+            }).join("");
+
+            // Render pagination
+            renderLogPagination(totalPages, start + 1, end, total);
+        }
+
+        function renderLogPagination(totalPages, start, end, total) {
+            var pg = document.getElementById("logPagination");
+            if (totalPages <= 1) { pg.style.display = "none"; return; }
+            pg.style.display = "flex";
+
+            var btns = "";
+            var startPage = Math.max(1, _logPage - 2);
+            var endPage   = Math.min(totalPages, startPage + 4);
+            if (endPage - startPage < 4) startPage = Math.max(1, endPage - 4);
+
+            for (var p = startPage; p <= endPage; p++) {
+                btns += "<button class='log-pg-btn" + (p === _logPage ? " active" : "") +
+                    "' onclick='goToLogPage(" + p + ")'>" + p + "</button>";
+            }
+
+            pg.innerHTML =
+                "<span>Showing " + start + "–" + end + " of " + total + " entries</span>" +
+                "<div class='log-pg-btns'>" +
+                    "<button class='log-pg-btn' onclick='goToLogPage(" + (_logPage - 1) + ")' " +
+                        (_logPage === 1 ? "disabled" : "") + ">← Prev</button>" +
+                    btns +
+                    "<button class='log-pg-btn' onclick='goToLogPage(" + (_logPage + 1) + ")' " +
+                        (_logPage === totalPages ? "disabled" : "") + ">Next →</button>" +
+                "</div>";
+        }
+
+        function goToLogPage(p) {
+            _logPage = p;
+            renderLogPage();
+            window.scrollTo({ top: 0, behavior: "smooth" });
+        }
+
+        function formatLogTime(isoStr) {
+            if (!isoStr) return "—";
+            var d    = new Date(isoStr);
+            var now  = new Date();
+            var diff = Math.floor((now - d) / 1000);
+            if (diff < 60)   return diff + "s ago";
+            if (diff < 3600) return Math.floor(diff / 60) + "m ago";
+            if (diff < 86400) return Math.floor(diff / 3600) + "h ago";
+            return d.toLocaleDateString("en-IN", {
+                day: "2-digit", month: "short", year: "numeric",
+                hour: "2-digit", minute: "2-digit"
+            });
+        }
+
+        function escapeHtml(str) {
+            if (!str) return "";
+            return String(str)
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;");
+        }
+    </script>
+
+    <script>
+        (function() {
+            var u = localStorage.getItem("currentUserId");
+            if (u && localStorage.getItem("role") === "ADMIN") {
+                localStorage.setItem("adminLastSeen_" + u, Date.now().toString());
+            }
+        })();
+    </script>
+</body>
+</html>

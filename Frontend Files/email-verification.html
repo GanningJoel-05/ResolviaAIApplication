@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Email Verification - ResolviaAI</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        body {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: radial-gradient(circle at 50% 0%, #e0e7ff 0%, var(--background) 60%);
+        }
+        .verify-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 3rem 2.5rem;
+            max-width: 460px;
+            width: 90%;
+            text-align: center;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.08);
+            animation: fadeInUp 0.6s cubic-bezier(0.16,1,0.3,1) forwards;
+        }
+        [data-theme="dark"] .verify-card {
+            background: #1e293b;
+            border-color: #334155;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+        }
+        .icon-circle {
+            width: 80px; height: 80px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            margin: 0 auto 1.5rem;
+            font-size: 2.2rem;
+        }
+        .icon-circle.success { background: #dcfce7; }
+        .icon-circle.error   { background: #fee2e2; }
+        .icon-circle.warning { background: #fef3c7; }
+        [data-theme="dark"] .icon-circle.success { background: #064e3b; }
+        [data-theme="dark"] .icon-circle.error   { background: #450a0a; }
+        [data-theme="dark"] .icon-circle.warning { background: #451a03; }
+
+        .verify-title {
+            font-size: 1.6rem; font-weight: 800;
+            color: var(--text-main); margin-bottom: 0.75rem;
+            letter-spacing: -0.03em;
+        }
+        .verify-desc {
+            font-size: 0.95rem; color: var(--text-muted);
+            line-height: 1.65; margin-bottom: 2rem;
+        }
+        .btn-verify {
+            display: inline-block; padding: 0.875rem 2.5rem;
+            background: linear-gradient(135deg, #4f46e5, #6366f1);
+            color: #fff; border-radius: 99px; font-weight: 700;
+            font-size: 0.95rem; text-decoration: none;
+            box-shadow: 0 4px 14px rgba(79,70,229,0.35);
+            transition: all 0.2s;
+        }
+        .btn-verify:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(79,70,229,0.4);
+            color: #fff;
+        }
+        .btn-secondary-link {
+            display: inline-block; margin-top: 1rem;
+            font-size: 0.85rem; color: var(--text-muted);
+            text-decoration: none;
+        }
+        .btn-secondary-link:hover { color: var(--primary); }
+        .resend-form { margin-top: 1.5rem; }
+        .resend-input {
+            width: 100%; padding: 0.75rem 1rem;
+            border: 1px solid var(--border); border-radius: var(--radius);
+            font-size: 0.95rem; background: var(--background);
+            color: var(--text-main); margin-bottom: 0.75rem;
+            font-family: inherit;
+        }
+        .resend-input:focus {
+            outline: none; border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(79,70,229,0.12);
+        }
+        [data-theme="dark"] .resend-input {
+            background: #0f172a; border-color: #334155; color: #f1f5f9;
+        }
+        .countdown {
+            font-size: 0.85rem; color: var(--text-muted);
+            margin-top: 1rem;
+        }
+        .countdown span { font-weight: 700; color: var(--primary); }
+    </style>
+</head>
+<body>
+    <div class="verify-card" id="verifyCard">
+        <!-- Content injected by JS based on ?status= param -->
+        <div style="color:var(--text-muted); font-size:0.95rem;">Loading...</div>
+    </div>
+
+    <script src="common.js"></script>
+    <script src="theme.js"></script>
+    <script>
+        const params = new URLSearchParams(window.location.search);
+        const status = params.get("status");
+        const email  = params.get("email") || "";
+        const card   = document.getElementById("verifyCard");
+
+        const states = {
+
+            // ── SUCCESS ────────────────────────────────────────────────────
+            success: {
+                icon: "✅", iconClass: "success",
+                title: "Email Verified!",
+                desc: "Your email address has been successfully verified. " +
+                      "Your ResolviaAI account is now active and ready to use.",
+                html: `
+                    <a href="login.html" class="btn-verify">Go to Login →</a>
+                    <div class="countdown">
+                        Redirecting to login in <span id="countdownNum">5</span>s...
+                    </div>`
+            },
+
+            // ── ALREADY USED ───────────────────────────────────────────────
+            already_used: {
+                icon: "ℹ️", iconClass: "warning",
+                title: "Already Verified",
+                desc: "This verification link has already been used. " +
+                      "Your account is active — you can log in now.",
+                html: `<a href="login.html" class="btn-verify">Go to Login →</a>`
+            },
+
+            // ── EXPIRED ────────────────────────────────────────────────────
+            expired: {
+                icon: "⏰", iconClass: "warning",
+                title: "Link Expired",
+                desc: "This verification link has expired (links are valid for 24 hours). " +
+                      "Enter your email below to get a fresh link.",
+                html: `
+                    <div class="resend-form">
+                        <input type="email" id="resendEmail" class="resend-input"
+                            placeholder="your@email.com"
+                            value="${email}">
+                        <button onclick="resendVerification()"
+                            class="btn-verify" style="width:100%;border:none;cursor:pointer;font-family:inherit;">
+                            Resend Verification Email
+                        </button>
+                    </div>
+                    <a href="login.html" class="btn-secondary-link">Back to Login</a>`
+            },
+
+            // ── INVALID TOKEN ──────────────────────────────────────────────
+            invalid: {
+                icon: "❌", iconClass: "error",
+                title: "Invalid Link",
+                desc: "This verification link is invalid or has been tampered with. " +
+                      "Please register again or request a new verification link.",
+                html: `
+                    <div class="resend-form">
+                        <input type="email" id="resendEmail" class="resend-input"
+                            placeholder="your@email.com">
+                        <button onclick="resendVerification()"
+                            class="btn-verify" style="width:100%;border:none;cursor:pointer;font-family:inherit;">
+                            Resend Verification Email
+                        </button>
+                    </div>
+                    <a href="register.html" class="btn-secondary-link">Register Again</a>`
+            }
+        };
+
+        // Default fallback
+        const state = states[status] || {
+            icon: "❓", iconClass: "warning",
+            title: "Something went wrong",
+            desc: "We couldn't process your verification. Please try registering again or contact support.",
+            html: `<a href="register.html" class="btn-verify">Register</a>`
+        };
+
+        card.innerHTML = `
+            <div class="icon-circle ${state.iconClass}">${state.icon}</div>
+            <h2 class="verify-title">${state.title}</h2>
+            <p class="verify-desc">${state.desc}</p>
+            ${state.html}
+        `;
+
+        // Auto-redirect countdown for success
+        if (status === "success") {
+            let secs = 5;
+            const el = document.getElementById("countdownNum");
+            const iv = setInterval(() => {
+                secs--;
+                if (el) el.textContent = secs;
+                if (secs <= 0) {
+                    clearInterval(iv);
+                    window.location.href = "login.html";
+                }
+            }, 1000);
+        }
+
+        // Resend verification
+        async function resendVerification() {
+            const emailInput = document.getElementById("resendEmail");
+            const emailVal   = emailInput ? emailInput.value.trim() : "";
+            if (!emailVal) { showToast("Please enter your email address.", "warning"); return; }
+
+            try {
+                const res = await fetch(API_BASE_URL + "/auth/resend-verification", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ email: emailVal })
+                });
+                const data = await res.json();
+                showToast(data.message || "Verification email sent!", "success");
+            } catch (e) {
+                showToast("Server error. Please try again.", "error");
+            }
+        }
+    </script>
+</body>
+</html>

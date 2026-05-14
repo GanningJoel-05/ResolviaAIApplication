@@ -1,0 +1,691 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ResolviaAI — AI-Powered IT Support</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <style>
+    /* ── Reset & Variables ── */
+    *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+
+    :root {
+      --indigo:    #4f46e5;
+      --indigo-dk: #3730a3;
+      --indigo-lt: #818cf8;
+      --sky:       #0ea5e9;
+      --emerald:   #10b981;
+      --amber:     #f59e0b;
+      --rose:      #ef4444;
+      --slate-950: #020617;
+      --slate-900: #0f172a;
+      --slate-800: #1e293b;
+      --slate-700: #334155;
+      --slate-400: #94a3b8;
+      --slate-200: #e2e8f0;
+      --white:     #ffffff;
+      --font-display: 'Syne', sans-serif;
+      --font-body:    'Inter', sans-serif;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: var(--font-body);
+      background: var(--slate-950);
+      color: var(--white);
+      overflow-x: hidden;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    a { text-decoration: none; color: inherit; }
+
+    /* ── Noise texture overlay ── */
+    body::before {
+      content: '';
+      position: fixed; inset: 0; z-index: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+      pointer-events: none;
+    }
+
+    /* ── Ambient glow blobs ── */
+    .blob {
+      position: fixed; border-radius: 50%;
+      filter: blur(120px); pointer-events: none; z-index: 0;
+    }
+    .blob-1 { width:600px; height:600px; background:rgba(79,70,229,0.18); top:-200px; left:-100px; }
+    .blob-2 { width:500px; height:500px; background:rgba(14,165,233,0.12); bottom:-100px; right:-100px; }
+    .blob-3 { width:400px; height:400px; background:rgba(16,185,129,0.08); top:50%; left:50%; transform:translate(-50%,-50%); }
+
+    /* ── Navbar ── */
+    .navbar {
+      position: fixed; top:0; left:0; right:0; z-index:1000;
+      display: flex; align-items:center; justify-content:space-between;
+      padding: 1.1rem 5%;
+      background: rgba(2,6,23,0.7);
+      backdrop-filter: blur(20px);
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+      transition: background 0.3s;
+    }
+    .nav-logo {
+      font-family: var(--font-display);
+      font-size: 1.4rem; font-weight: 800; letter-spacing: -0.03em;
+      color: var(--white);
+    }
+    .nav-logo span {
+      background: linear-gradient(135deg, var(--indigo-lt), var(--sky));
+      background-clip: text; -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    }
+    .nav-links { display:flex; align-items:center; gap:0.5rem; }
+    .btn-nav-login {
+      padding: 0.5rem 1.25rem; border-radius: 8px;
+      border: 1px solid rgba(255,255,255,0.15);
+      color: rgba(255,255,255,0.85); font-size:0.9rem; font-weight:500;
+      transition: all 0.2s; font-family: var(--font-body);
+      cursor: pointer; background: transparent;
+    }
+    .btn-nav-login:hover { background: rgba(255,255,255,0.08); color: var(--white); }
+    .btn-nav-register {
+      padding: 0.5rem 1.25rem; border-radius: 8px;
+      background: var(--indigo); color: var(--white);
+      font-size:0.9rem; font-weight:600; font-family: var(--font-body);
+      transition: all 0.2s; cursor: pointer; border: none;
+    }
+    .btn-nav-register:hover { background: var(--indigo-dk); transform: translateY(-1px); }
+
+    /* ── Section wrapper ── */
+    .section { position:relative; z-index:1; }
+
+    /* ════════════════════════════════════
+       HERO SECTION
+    ════════════════════════════════════ */
+    .hero {
+      min-height: 100vh;
+      display: flex; flex-direction:column;
+      align-items:center; justify-content:center;
+      padding: 8rem 5% 5rem;
+      text-align: center;
+    }
+
+    .hero-badge {
+      display: inline-flex; align-items:center; gap:0.5rem;
+      background: rgba(79,70,229,0.15);
+      border: 1px solid rgba(79,70,229,0.35);
+      padding: 0.4rem 1rem; border-radius:99px;
+      font-size:0.8rem; font-weight:600; color: var(--indigo-lt);
+      letter-spacing:0.04em; text-transform:uppercase;
+      margin-bottom: 1.75rem;
+      animation: fadeUp 0.6s ease both;
+    }
+    .hero-badge-dot {
+      width:6px; height:6px; border-radius:50%;
+      background: var(--emerald);
+      box-shadow: 0 0 8px var(--emerald);
+      animation: pulse 2s infinite;
+    }
+    @keyframes pulse {
+      0%,100% { opacity:1; transform:scale(1); }
+      50%      { opacity:0.6; transform:scale(1.4); }
+    }
+
+    .hero h1 {
+      font-family: var(--font-display);
+      font-size: clamp(2.8rem, 7vw, 5.5rem);
+      font-weight: 800; line-height: 1.05;
+      letter-spacing: -0.04em;
+      margin-bottom: 1.5rem;
+      animation: fadeUp 0.6s 0.1s ease both;
+    }
+    .hero h1 .line-2 {
+      background: linear-gradient(135deg, var(--indigo-lt) 0%, var(--sky) 50%, var(--emerald) 100%);
+      background-clip: text; -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      display: block;
+    }
+
+    .hero-sub {
+      font-size: clamp(1rem, 2vw, 1.2rem);
+      color: var(--slate-400); line-height: 1.7;
+      max-width: 580px; margin: 0 auto 2.5rem;
+      animation: fadeUp 0.6s 0.2s ease both;
+    }
+
+    .hero-actions {
+      display: flex; gap:1rem; flex-wrap:wrap; justify-content:center;
+      margin-bottom: 4rem;
+      animation: fadeUp 0.6s 0.3s ease both;
+    }
+    .btn-hero-primary {
+      padding: 0.9rem 2.2rem; border-radius:10px;
+      background: linear-gradient(135deg, var(--indigo), var(--sky));
+      color: var(--white); font-size:1rem; font-weight:600;
+      font-family: var(--font-body); cursor:pointer; border:none;
+      box-shadow: 0 0 30px rgba(79,70,229,0.4);
+      transition: all 0.25s; display:inline-flex; align-items:center; gap:0.5rem;
+    }
+    .btn-hero-primary:hover { transform:translateY(-2px); box-shadow:0 0 50px rgba(79,70,229,0.5); }
+    .btn-hero-secondary {
+      padding: 0.9rem 2.2rem; border-radius:10px;
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.15);
+      color: rgba(255,255,255,0.85); font-size:1rem; font-weight:500;
+      font-family: var(--font-body); cursor:pointer;
+      transition: all 0.25s; display:inline-flex; align-items:center; gap:0.5rem;
+    }
+    .btn-hero-secondary:hover { background: rgba(255,255,255,0.1); color:var(--white); transform:translateY(-2px); }
+
+    /* Dashboard mockup */
+    .hero-mockup {
+      width: 100%; max-width: 900px;
+      background: rgba(30,41,59,0.8);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 40px 80px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.05);
+      animation: fadeUp 0.8s 0.4s ease both;
+      backdrop-filter: blur(10px);
+    }
+    .mockup-bar {
+      background: rgba(15,23,42,0.9);
+      padding: 0.75rem 1.25rem;
+      display: flex; align-items:center; gap:0.5rem;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+    }
+    .mockup-dot { width:11px; height:11px; border-radius:50%; }
+    .mockup-url {
+      flex:1; background:rgba(255,255,255,0.06); border-radius:6px;
+      padding:0.3rem 0.85rem; font-size:0.75rem; color:var(--slate-400);
+      margin: 0 1rem; text-align:center;
+    }
+    .mockup-body { padding:1.5rem; }
+    .mockup-row {
+      display: grid; grid-template-columns: 1fr 1fr 1fr;
+      gap: 0.85rem; margin-bottom:1rem;
+    }
+    .mockup-card {
+      background: rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08);
+      border-radius:10px; padding:1rem;
+    }
+    .mockup-card-label { font-size:0.7rem; color:var(--slate-400); text-transform:uppercase; letter-spacing:0.06em; margin-bottom:0.4rem; }
+    .mockup-card-num { font-family:var(--font-display); font-size:1.8rem; font-weight:700; }
+    .mockup-ticket {
+      background: rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.07);
+      border-radius:8px; padding:0.75rem 1rem;
+      display:flex; align-items:center; gap:1rem; margin-bottom:0.5rem;
+    }
+    .mockup-ticket-id { font-size:0.72rem; color:var(--indigo-lt); font-weight:600; min-width:90px; }
+    .mockup-ticket-title { font-size:0.82rem; flex:1; color:rgba(255,255,255,0.8); }
+    .mockup-badge {
+      padding:3px 10px; border-radius:99px; font-size:0.68rem; font-weight:700;
+      white-space:nowrap;
+    }
+
+    @keyframes fadeUp {
+      from { opacity:0; transform:translateY(24px); }
+      to   { opacity:1; transform:translateY(0); }
+    }
+
+    /* ════════════════════════════════════
+       STATS BAR
+    ════════════════════════════════════ */
+    .stats-bar {
+      padding: 3rem 5%;
+      background: rgba(30,41,59,0.4);
+      border-top: 1px solid rgba(255,255,255,0.06);
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+    }
+    .stats-inner {
+      max-width: 900px; margin:0 auto;
+      display: grid; grid-template-columns: repeat(4,1fr);
+      gap: 2rem; text-align:center;
+    }
+    .stat-num {
+      font-family: var(--font-display);
+      font-size: 2.4rem; font-weight:800;
+      background: linear-gradient(135deg, var(--white), var(--indigo-lt));
+      background-clip:text; -webkit-background-clip:text; -webkit-text-fill-color:transparent;
+      line-height:1;
+      margin-bottom: 0.35rem;
+    }
+    .stat-label { font-size:0.85rem; color:var(--slate-400); font-weight:500; }
+
+    /* ════════════════════════════════════
+       HOW IT WORKS
+    ════════════════════════════════════ */
+    .how-section {
+      padding: 6rem 5%;
+    }
+    .section-eyebrow {
+      text-align:center; font-size:0.78rem; font-weight:700;
+      text-transform:uppercase; letter-spacing:0.1em;
+      color: var(--indigo-lt); margin-bottom:0.75rem;
+    }
+    .section-title {
+      font-family: var(--font-display);
+      font-size: clamp(1.8rem, 4vw, 2.8rem);
+      font-weight:800; text-align:center; letter-spacing:-0.03em;
+      margin-bottom:0.75rem;
+    }
+    .section-sub {
+      text-align:center; color:var(--slate-400);
+      font-size:1rem; max-width:520px; margin:0 auto 4rem; line-height:1.6;
+    }
+
+    .steps-grid {
+      max-width: 900px; margin:0 auto;
+      display: grid; grid-template-columns: repeat(3,1fr);
+      gap: 1px;
+      background: rgba(255,255,255,0.07);
+      border-radius: 16px; overflow:hidden;
+    }
+    .step-card {
+      background: rgba(15,23,42,0.9);
+      padding: 2.5rem 2rem;
+      position:relative;
+      transition: background 0.3s;
+    }
+    .step-card:hover { background: rgba(30,41,59,0.95); }
+    .step-num {
+      font-family: var(--font-display);
+      font-size: 3.5rem; font-weight:800;
+      color: rgba(255,255,255,0.05);
+      position:absolute; top:1.5rem; right:1.5rem;
+      line-height:1;
+    }
+    .step-icon {
+      width:48px; height:48px; border-radius:12px;
+      display:flex; align-items:center; justify-content:center;
+      font-size:1.4rem; margin-bottom:1.25rem;
+    }
+    .step-title {
+      font-family:var(--font-display); font-size:1.1rem; font-weight:700;
+      margin-bottom:0.6rem;
+    }
+    .step-desc { font-size:0.88rem; color:var(--slate-400); line-height:1.6; }
+
+    /* ════════════════════════════════════
+       FEATURES GRID
+    ════════════════════════════════════ */
+    .features-section { padding: 6rem 5%; }
+
+    .features-grid {
+      max-width: 1000px; margin:0 auto;
+      display: grid; grid-template-columns: repeat(3,1fr);
+      gap: 1rem;
+    }
+    .feature-card {
+      background: rgba(15,23,42,0.7);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 14px; padding: 1.75rem;
+      transition: all 0.3s; position:relative; overflow:hidden;
+    }
+    .feature-card::before {
+      content:''; position:absolute; inset:0;
+      background: linear-gradient(135deg, transparent 60%, rgba(79,70,229,0.07));
+      pointer-events:none;
+    }
+    .feature-card:hover {
+      border-color: rgba(79,70,229,0.4);
+      transform: translateY(-3px);
+      box-shadow: 0 20px 40px rgba(0,0,0,0.3), 0 0 0 1px rgba(79,70,229,0.2);
+    }
+    .feature-icon {
+      font-size:1.6rem; margin-bottom:1rem;
+      display:block;
+    }
+    .feature-title {
+      font-family:var(--font-display); font-size:1rem; font-weight:700;
+      margin-bottom:0.5rem;
+    }
+    .feature-desc { font-size:0.84rem; color:var(--slate-400); line-height:1.6; }
+
+    /* ════════════════════════════════════
+       RESOLUTION TYPES
+    ════════════════════════════════════ */
+    .resolution-section { padding: 6rem 5%; }
+
+    .resolution-grid {
+      max-width: 900px; margin:0 auto;
+      display: grid; grid-template-columns: repeat(3,1fr);
+      gap: 1.5rem;
+    }
+    .res-card {
+      border-radius:16px; padding:2rem;
+      text-align:center;
+      transition: transform 0.3s;
+    }
+    .res-card:hover { transform:translateY(-4px); }
+    .res-card-ai  { background:linear-gradient(135deg, rgba(16,185,129,0.15), rgba(16,185,129,0.05)); border:1px solid rgba(16,185,129,0.3); }
+    .res-card-mix { background:linear-gradient(135deg, rgba(245,158,11,0.15), rgba(245,158,11,0.05)); border:1px solid rgba(245,158,11,0.3); }
+    .res-card-man { background:linear-gradient(135deg, rgba(99,102,241,0.15), rgba(99,102,241,0.05)); border:1px solid rgba(99,102,241,0.3); }
+
+    .res-icon { font-size:2.5rem; margin-bottom:1rem; display:block; }
+    .res-title {
+      font-family:var(--font-display); font-size:1.1rem; font-weight:700;
+      margin-bottom:0.5rem;
+    }
+    .res-badge {
+      display:inline-block; padding:3px 12px; border-radius:99px;
+      font-size:0.72rem; font-weight:700; letter-spacing:0.04em;
+      text-transform:uppercase; margin-bottom:1rem;
+    }
+    .res-desc { font-size:0.84rem; line-height:1.6; }
+    .res-card-ai  .res-desc { color:rgba(110,231,183,0.8); }
+    .res-card-mix .res-desc { color:rgba(253,230,138,0.8); }
+    .res-card-man .res-desc { color:rgba(199,210,254,0.8); }
+
+    /* ════════════════════════════════════
+       CTA SECTION
+    ════════════════════════════════════ */
+    .cta-section {
+      padding: 6rem 5%;
+    }
+    .cta-inner {
+      max-width: 700px; margin:0 auto;
+      background: linear-gradient(135deg, rgba(79,70,229,0.2) 0%, rgba(14,165,233,0.1) 100%);
+      border: 1px solid rgba(79,70,229,0.3);
+      border-radius: 24px;
+      padding: 4rem 3rem;
+      text-align:center;
+      position:relative; overflow:hidden;
+    }
+    .cta-inner::before {
+      content:''; position:absolute; inset:0;
+      background: radial-gradient(circle at 50% 0%, rgba(79,70,229,0.15), transparent 70%);
+    }
+    .cta-title {
+      font-family:var(--font-display);
+      font-size: clamp(1.8rem,4vw,2.6rem);
+      font-weight:800; letter-spacing:-0.03em;
+      margin-bottom:1rem; position:relative;
+    }
+    .cta-sub {
+      color:var(--slate-400); font-size:1rem; line-height:1.6;
+      max-width:420px; margin:0 auto 2rem; position:relative;
+    }
+    .cta-actions { display:flex; gap:1rem; justify-content:center; flex-wrap:wrap; position:relative; }
+
+    /* ════════════════════════════════════
+       FOOTER
+    ════════════════════════════════════ */
+    footer {
+      border-top: 1px solid rgba(255,255,255,0.07);
+      padding: 2.5rem 5%;
+      display:flex; align-items:center; justify-content:space-between;
+      flex-wrap:wrap; gap:1rem;
+      position:relative; z-index:1;
+    }
+    .footer-logo {
+      font-family:var(--font-display); font-size:1.1rem; font-weight:800;
+      letter-spacing:-0.03em;
+    }
+    .footer-logo span {
+      background:linear-gradient(135deg,var(--indigo-lt),var(--sky));
+      background-clip:text; -webkit-background-clip:text; -webkit-text-fill-color:transparent;
+    }
+    .footer-center { font-size:0.82rem; color:var(--slate-400); text-align:center; }
+    .footer-right { display:flex; gap:1.5rem; }
+    .footer-link { font-size:0.82rem; color:var(--slate-400); transition:color 0.2s; }
+    .footer-link:hover { color:var(--white); }
+
+    /* ── Responsive ── */
+    @media (max-width:768px) {
+      .stats-inner      { grid-template-columns:repeat(2,1fr); }
+      .steps-grid       { grid-template-columns:1fr; }
+      .features-grid    { grid-template-columns:1fr 1fr; }
+      .resolution-grid  { grid-template-columns:1fr; }
+      .hero-actions     { flex-direction:column; align-items:center; }
+      .mockup-row       { grid-template-columns:1fr 1fr; }
+      footer            { flex-direction:column; text-align:center; }
+    }
+    @media (max-width:500px) {
+      .features-grid { grid-template-columns:1fr; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Ambient blobs -->
+  <div class="blob blob-1"></div>
+  <div class="blob blob-2"></div>
+  <div class="blob blob-3"></div>
+
+  <!-- ── NAVBAR ── -->
+  <nav class="navbar">
+    <div class="nav-logo">Resolvia<span>AI</span></div>
+    <div class="nav-links">
+      <a href="login.html"    class="btn-nav-login">Login</a>
+      <a href="register.html" class="btn-nav-register">Get Started</a>
+    </div>
+  </nav>
+
+  <!-- ── HERO ── -->
+  <section class="hero section">
+    <div class="hero-badge">
+      <span class="hero-badge-dot"></span>
+      Powered by Gemini 2.5 Flash AI
+    </div>
+
+    <h1>
+      AI-Powered<br>
+      <span class="line-2">Ticket Management System</span>
+    </h1>
+
+    <p class="hero-sub">
+      Submit a ticket. Gemini AI classifies it, generates a step-by-step solution,
+      and resolves it — in seconds. Complex cases escalate to admins automatically.
+    </p>
+
+    <div class="hero-actions">
+      <a href="register.html" class="btn-hero-primary">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+        Start for Free
+      </a>
+      <a href="login.html" class="btn-hero-secondary">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
+        Sign In
+      </a>
+    </div>
+
+    <!-- Mockup -->
+    <div class="hero-mockup">
+      <div class="mockup-bar">
+        <div class="mockup-dot" style="background:#ff5f57;"></div>
+        <div class="mockup-dot" style="background:#ffbd2e;"></div>
+        <div class="mockup-dot" style="background:#28c840;"></div>
+        <div class="mockup-url">127.0.0.1:5500/admin-dashboard.html</div>
+      </div>
+      <div class="mockup-body">
+        <div class="mockup-row">
+          <div class="mockup-card">
+            <div class="mockup-card-label">Total Tickets</div>
+            <div class="mockup-card-num" style="color:#818cf8;">248</div>
+          </div>
+          <div class="mockup-card">
+            <div class="mockup-card-label">AI Resolved</div>
+            <div class="mockup-card-num" style="color:#10b981;">189</div>
+          </div>
+          <div class="mockup-card">
+            <div class="mockup-card-label">Needs Review</div>
+            <div class="mockup-card-num" style="color:#f59e0b;">12</div>
+          </div>
+        </div>
+        <div class="mockup-ticket">
+          <span class="mockup-ticket-id">SR-4F2A9C1B</span>
+          <span class="mockup-ticket-title">Laptop not connecting to WiFi</span>
+          <span class="mockup-badge" style="background:rgba(16,185,129,0.2);color:#6ee7b7;">AI Solved</span>
+        </div>
+        <div class="mockup-ticket">
+          <span class="mockup-ticket-id">SR-8E3D7B2A</span>
+          <span class="mockup-ticket-title">VS Code extensions not loading</span>
+          <span class="mockup-badge" style="background:rgba(16,185,129,0.2);color:#6ee7b7;">AI Solved</span>
+        </div>
+        <div class="mockup-ticket">
+          <span class="mockup-ticket-id">SR-1C9F4E5D</span>
+          <span class="mockup-ticket-title">Printer queue stuck after update</span>
+          <span class="mockup-badge" style="background:rgba(245,158,11,0.2);color:#fde68a;">Needs Review</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── STATS BAR ── -->
+  <section class="stats-bar section">
+    <div class="stats-inner">
+      <div class="stat-item">
+        <div class="stat-num">76%</div>
+        <div class="stat-label">Tickets Auto-Resolved by AI</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-num">&lt;3s</div>
+        <div class="stat-label">Average AI Resolution Time</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-num">100%</div>
+        <div class="stat-label">Non-Tech Tickets Filtered</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-num">0</div>
+        <div class="stat-label">Manual Triage Required</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── HOW IT WORKS ── -->
+  <section class="how-section section">
+    <div class="section-eyebrow">How It Works</div>
+    <h2 class="section-title">Three steps. Zero waiting.</h2>
+    <p class="section-sub">From ticket submission to resolution in seconds — fully automated.</p>
+
+    <div class="steps-grid">
+      <div class="step-card">
+        <span class="step-num">01</span>
+        <div class="step-icon" style="background:rgba(79,70,229,0.15);">📝</div>
+        <div class="step-title">You Submit</div>
+        <div class="step-desc">Describe your IT issue. AI auto-corrects your category selection and validates it's a genuine technical problem.</div>
+      </div>
+      <div class="step-card">
+        <span class="step-num">02</span>
+        <div class="step-icon" style="background:rgba(14,165,233,0.15);">🤖</div>
+        <div class="step-title">AI Analyzes</div>
+        <div class="step-desc">Gemini scores confidence (0–100%), generates a 5-step solution, and decides: auto-resolve or escalate to admin.</div>
+      </div>
+      <div class="step-card">
+        <span class="step-num">03</span>
+        <div class="step-icon" style="background:rgba(16,185,129,0.15);">✅</div>
+        <div class="step-title">Resolved</div>
+        <div class="step-desc">High-confidence issues resolve instantly. Others go to admin with the AI draft pre-filled — making manual review fast.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── FEATURES GRID ── -->
+  <section class="features-section section">
+    <div class="section-eyebrow">Features</div>
+    <h2 class="section-title">Built for real IT support</h2>
+    <p class="section-sub">Every feature designed to reduce admin workload and improve user experience.</p>
+
+    <div class="features-grid">
+      <div class="feature-card">
+        <span class="feature-icon">⚡</span>
+        <div class="feature-title">Instant AI Resolution</div>
+        <div class="feature-desc">Tickets with ≥75% AI confidence are resolved automatically in under 3 seconds — no human needed.</div>
+      </div>
+      <div class="feature-card">
+        <span class="feature-icon">🔁</span>
+        <div class="feature-title">Human-in-the-Loop</div>
+        <div class="feature-desc">Complex cases escalate to admins with the AI's draft solution pre-filled. Admins accept, edit, or override.</div>
+      </div>
+      <div class="feature-card">
+        <span class="feature-icon">🎯</span>
+        <div class="feature-title">Smart Classification</div>
+        <div class="feature-desc">AI determines the correct category and priority regardless of what the user selects in the dropdown.</div>
+      </div>
+      <div class="feature-card">
+        <span class="feature-icon">🚫</span>
+        <div class="feature-title">Non-Tech Detection</div>
+        <div class="feature-desc">Personal requests, medical queries, and spam are auto-rejected by AI — keeping the admin queue clean.</div>
+      </div>
+      <div class="feature-card">
+        <span class="feature-icon">📊</span>
+        <div class="feature-title">Admin Analytics</div>
+        <div class="feature-desc">Real-time charts showing ticket trends, AI success rates, and category breakdowns at a glance.</div>
+      </div>
+      <div class="feature-card">
+        <span class="feature-icon">🔐</span>
+        <div class="feature-title">Role-Based Access</div>
+        <div class="feature-desc">JWT auth with separate USER and ADMIN roles, email domain restrictions, and admin passkey protection.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── RESOLUTION TYPES ── -->
+  <section class="resolution-section section">
+    <div class="section-eyebrow">Resolution Modes</div>
+    <h2 class="section-title">Three ways tickets get solved</h2>
+    <p class="section-sub">The AI decides the best path for every ticket automatically.</p>
+
+    <div class="resolution-grid">
+      <div class="res-card res-card-ai">
+        <span class="res-icon">🤖</span>
+        <div class="res-title">AI Auto-Solved</div>
+        <div class="res-badge" style="background:rgba(16,185,129,0.2);color:#6ee7b7;">Confidence ≥ 75%</div>
+        <div class="res-desc">Gemini resolves the ticket instantly with a step-by-step solution. No admin involvement needed.</div>
+      </div>
+      <div class="res-card res-card-mix">
+        <span class="res-icon">🤝</span>
+        <div class="res-title">AI + Admin</div>
+        <div class="res-badge" style="background:rgba(245,158,11,0.2);color:#fde68a;">Confidence 50–74%</div>
+        <div class="res-desc">AI generates a draft solution. Admin reviews, edits if needed, and approves. Best of both worlds.</div>
+      </div>
+      <div class="res-card res-card-man">
+        <span class="res-icon">👤</span>
+        <div class="res-title">Admin Resolved</div>
+        <div class="res-badge" style="background:rgba(99,102,241,0.2);color:#c7d2fe;">Confidence &lt; 50%</div>
+        <div class="res-desc">Complex or vague issues handled entirely by the admin. AI flags and routes these automatically.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── CTA ── -->
+  <section class="cta-section section">
+    <div class="cta-inner">
+      <h2 class="cta-title">Ready to resolve smarter?</h2>
+      <p class="cta-sub">Join your team on ResolviaAI and let AI handle the routine — so you can focus on what matters.</p>
+      <div class="cta-actions">
+        <a href="register.html" class="btn-hero-primary">
+          Create Account →
+        </a>
+        <a href="login.html" class="btn-hero-secondary">
+          Sign In
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── FOOTER ── -->
+  <footer class="section">
+    <div class="footer-logo">Resolvia<span>AI</span></div>
+    <div class="footer-center">
+      Built for Hackathon 2026 &nbsp;·&nbsp; AI-Powered IT Support Platform
+    </div>
+    <div class="footer-right">
+      <a href="login.html"    class="footer-link">Login</a>
+      <a href="register.html" class="footer-link">Register</a>
+    </div>
+  </footer>
+
+  <script>
+    // Navbar scroll effect
+    window.addEventListener('scroll', () => {
+      const nav = document.querySelector('.navbar');
+      if (window.scrollY > 40) {
+        nav.style.background = 'rgba(2,6,23,0.95)';
+      } else {
+        nav.style.background = 'rgba(2,6,23,0.7)';
+      }
+    });
+  </script>
+</body>
+</html>

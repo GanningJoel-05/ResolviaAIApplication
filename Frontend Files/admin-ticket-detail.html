@@ -1,0 +1,1061 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ticket Detail - ResolviaAI Admin</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="admin-dashboard.css">
+    <style>
+        /* Solution Steps */
+        .solution-steps { display:flex; flex-direction:column; gap:0.65rem; margin-top:0.5rem; }
+        .solution-step  {
+            display:flex; align-items:flex-start; gap:0.9rem;
+            padding:0.8rem 1rem; background:#f5f3ff;
+            border:1px solid #ddd6fe; border-radius:8px;
+        }
+        [data-theme="dark"] .solution-step { background:#1e1b4b; border-color:#3730a3; }
+        .step-number {
+            min-width:26px; height:26px; border-radius:50%;
+            background:var(--primary-accent); color:#fff;
+            display:flex; align-items:center; justify-content:center;
+            font-weight:700; font-size:0.78rem; flex-shrink:0; margin-top:1px;
+        }
+        .step-text { color:#3730a3; font-size:0.95rem; line-height:1.55; padding-top:2px; }
+        [data-theme="dark"] .step-text { color:#c7d2fe; }
+        .block-label {
+            font-size:0.78rem; font-weight:600; text-transform:uppercase;
+            letter-spacing:0.06em; color:#6b7280; margin-bottom:0.3rem;
+        }
+        .user-profile-link {
+            color:var(--primary-accent); font-weight:600; font-size:1.1rem;
+            text-decoration:none; cursor:pointer;
+        }
+        .user-profile-link:hover { text-decoration:underline; }
+
+        /* ── Two-column layout ── */
+        .detail-layout {
+            display: grid;
+            grid-template-columns: 1fr 340px;
+            gap: 1.5rem;
+            align-items: start;
+        }
+        @media (max-width: 900px) {
+            .detail-layout { grid-template-columns: 1fr; }
+        }
+
+        /* ── Sidebar panels ── */
+        .sidebar-panel {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius);
+            overflow: hidden;
+        }
+        .sidebar-panel-header {
+            padding: 0.9rem 1.25rem;
+            border-bottom: 1px solid var(--border-color);
+            font-size: 0.82rem; font-weight:700;
+            text-transform: uppercase; letter-spacing:0.06em;
+            color: #6b7280;
+            display: flex; align-items:center; justify-content:space-between;
+            cursor: pointer; user-select:none;
+        }
+        .sidebar-panel-header:hover { background: rgba(0,0,0,0.02); }
+        .sidebar-panel-body { padding: 1.25rem; }
+        .collapse-icon { transition: transform 0.2s; font-size:0.9rem; }
+        .collapsed .collapse-icon { transform: rotate(-90deg); }
+        .collapsed .sidebar-panel-body { display:none; }
+
+        /* ── BATCH 3: AI Confidence Explainer ── */
+        .conf-bar-track {
+            height: 8px; background: var(--border-color);
+            border-radius: 99px; overflow:hidden; margin: 0.6rem 0;
+        }
+        .conf-bar-fill { height:100%; border-radius:99px; transition: width 0.6s ease; }
+        .conf-factor {
+            display:flex; align-items:center; gap:0.6rem;
+            padding: 0.5rem 0; border-bottom:1px solid var(--border-color);
+            font-size:0.83rem;
+        }
+        .conf-factor:last-child { border-bottom:none; }
+        .conf-factor-icon { font-size:1rem; flex-shrink:0; }
+        .conf-factor-text { flex:1; color: var(--text-color); }
+        .conf-factor-badge {
+            padding:2px 8px; border-radius:99px; font-size:0.7rem; font-weight:700;
+        }
+
+        /* ── BATCH 3: Similar Tickets ── */
+        .similar-ticket {
+            padding:0.7rem 0; border-bottom:1px solid var(--border-color);
+            cursor:pointer; transition: all 0.15s;
+        }
+        .similar-ticket:last-child { border-bottom:none; }
+        .similar-ticket:hover { opacity:0.8; }
+        .similar-ticket-title {
+            font-size:0.85rem; font-weight:600; color:var(--primary-accent);
+            margin-bottom:0.2rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+        }
+        .similar-ticket-meta { font-size:0.75rem; color:#6b7280; }
+        .similar-ticket-copy {
+            margin-top:0.4rem; padding:3px 10px; border-radius:6px;
+            font-size:0.75rem; font-weight:600; cursor:pointer;
+            background:var(--primary-accent); color:#fff; border:none;
+            font-family:inherit; transition:opacity 0.2s;
+        }
+        .similar-ticket-copy:hover { opacity:0.85; }
+
+        /* ── BATCH 3: Admin Notes ── */
+        .notes-textarea {
+            width:100%; min-height:90px; padding:0.7rem 0.9rem;
+            border:1px solid var(--border-color); border-radius:8px;
+            font-size:0.88rem; font-family:inherit; resize:vertical;
+            background:var(--bg-color); color:var(--text-color);
+            box-sizing:border-box;
+        }
+        .notes-textarea:focus {
+            outline:none; border-color:var(--primary-accent);
+            box-shadow:0 0 0 3px rgba(79,70,229,0.1);
+        }
+        .btn-save-notes {
+            margin-top:0.6rem; padding:0.4rem 1.1rem; border-radius:7px;
+            background:var(--primary-accent); color:#fff; border:none;
+            font-size:0.82rem; font-weight:600; cursor:pointer;
+            font-family:inherit; transition:opacity 0.2s;
+        }
+        .btn-save-notes:hover { opacity:0.88; }
+        .notes-saved-msg {
+            font-size:0.78rem; color:#16a34a; margin-top:0.35rem;
+            display:none;
+        }
+
+        /* ── BATCH 3: Priority Override ── */
+        .priority-select {
+            width:100%; padding:0.55rem 0.8rem;
+            border:1px solid var(--border-color); border-radius:8px;
+            font-size:0.9rem; font-family:inherit;
+            background:var(--bg-color); color:var(--text-color);
+            margin-bottom:0.6rem;
+        }
+        .priority-select:focus { outline:none; border-color:var(--primary-accent); }
+        .priority-reason-input {
+            width:100%; padding:0.55rem 0.8rem;
+            border:1px solid var(--border-color); border-radius:8px;
+            font-size:0.85rem; font-family:inherit;
+            background:var(--bg-color); color:var(--text-color);
+            margin-bottom:0.6rem; box-sizing:border-box;
+        }
+        .priority-reason-input:focus { outline:none; border-color:var(--primary-accent); }
+        .btn-save-priority {
+            padding:0.4rem 1.1rem; border-radius:7px;
+            background:#f59e0b; color:#fff; border:none;
+            font-size:0.82rem; font-weight:600; cursor:pointer;
+            font-family:inherit; transition:opacity 0.2s;
+        }
+        .btn-save-priority:hover { opacity:0.88; }
+        .priority-current {
+            font-size:0.78rem; color:#6b7280; margin-bottom:0.75rem;
+        }
+    </style>
+</head>
+<body class="admin-body">
+
+    <aside class="sidebar">
+        <div class="sidebar-header"><h2>ResolviaAI</h2></div>
+        <ul class="sidebar-menu">
+            <li><a href="admin-dashboard.html">Dashboard</a></li>
+            <li><a href="ticket-management.html" class="active">Ticket Management</a></li>
+            <li><a href="ai-decision-panel.html">AI Decision Panel</a></li>
+            <li style="margin-top:auto;padding-top:1rem;border-top:1px solid rgba(255,255,255,0.1);">
+                <a href="admin-profile.html">My Profile</a>
+            </li>
+            <li><a href="admin-settings.html">Settings</a></li>
+        </ul>
+    </aside>
+
+    <div class="main-wrapper">
+        <nav class="admin-nav">
+            <div class="nav-title">Ticket Information System</div>
+            <div class="nav-right">
+                <div class="user-profile">
+                    <div class="avatar-circle" id="adminAvatar">A</div>
+                    <span class="user-name" id="adminNameText">Admin</span>
+                </div>
+                <button class="btn-logout" onclick="handleLogout()">Logout</button>
+            </div>
+        </nav>
+
+        <main class="admin-content">
+
+            <!-- BATCH 5C: Ticket Lock Banner — shown when another admin is resolving -->
+            <div id="ticketLockBanner" style="display:none; background:#fef3c7;
+                border:1px solid #fcd34d; border-left:4px solid #f59e0b;
+                border-radius:10px; padding:0.85rem 1.25rem; margin-bottom:1.25rem;
+                display:none; align-items:center; gap:0.85rem;">
+                <span style="font-size:1.3rem;">⚠️</span>
+                <div>
+                    <div style="font-weight:700; font-size:0.92rem; color:#92400e;" id="lockBannerTitle">
+                        Another admin is resolving this ticket
+                    </div>
+                    <div style="font-size:0.82rem; color:#b45309; margin-top:2px;" id="lockBannerMsg">
+                        Please wait until they finish.
+                    </div>
+                </div>
+            </div>
+
+            <!-- Two-column layout: Main content + Sidebar -->
+            <div class="detail-layout">
+
+                <!-- ═══════════════════════════════════════
+                     LEFT: Main ticket content
+                ════════════════════════════════════════ -->
+                <div>
+                    <section class="card" style="padding:2.5rem;">
+
+                        <!-- Header -->
+                        <div style="display:flex;align-items:center;justify-content:space-between;
+                            flex-wrap:wrap;gap:0.75rem;margin-bottom:2rem;
+                            border-bottom:1px solid var(--border-color);padding-bottom:1rem;">
+                            <h2 style="font-size:1.4rem;font-weight:700;margin:0;">
+                                Ticket Overview:
+                                <span id="detail-ticket-id" style="color:var(--primary-accent);">#0000</span>
+                            </h2>
+                            <span id="detail-ticket-type"></span>
+                        </div>
+
+                        <!-- Meta Grid -->
+                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;margin-bottom:2rem;">
+                            <div>
+                                <div class="block-label">User Name</div>
+                                <div id="detail-ticket-user" style="margin-top:0.2rem;">
+                                    <span style="color:#6b7280;font-size:1rem;">Loading...</span>
+                                </div>
+                            </div>
+                            <div>
+                                <div class="block-label">Created Date</div>
+                                <div id="detail-ticket-date" style="font-size:1.1rem;font-weight:500;margin-top:0.2rem;">--/--/----</div>
+                            </div>
+                            <div>
+                                <div class="block-label">Status</div>
+                                <div id="detail-ticket-status" style="margin-top:0.2rem;">—</div>
+                            </div>
+                            <div>
+                                <div class="block-label">Category</div>
+                                <div id="detail-ticket-category" style="font-size:1.1rem;font-weight:500;margin-top:0.2rem;">—</div>
+                            </div>
+                            <div>
+                                <div class="block-label">Priority
+                                    <span id="priorityOverrideTag" style="display:none;margin-left:0.4rem;
+                                        background:#fef3c7;color:#92400e;padding:1px 6px;
+                                        border-radius:4px;font-size:0.68rem;">Overridden</span>
+                                </div>
+                                <div id="detail-ticket-priority" style="margin-top:0.2rem;">—</div>
+                                <div id="priorityOverrideReason" style="font-size:0.75rem;color:#6b7280;
+                                    margin-top:0.25rem;display:none;"></div>
+                            </div>
+                            <div>
+                                <!-- AI Confidence with expandable explainer trigger -->
+                                <div class="block-label">AI Confidence
+                                    <span id="confExplainerToggle" onclick="toggleConfExplainer()"
+                                        style="display:none;margin-left:0.4rem;cursor:pointer;
+                                        color:var(--primary-accent);font-size:0.72rem;font-weight:600;
+                                        text-transform:none;letter-spacing:0;">
+                                        Why? ▾
+                                    </span>
+                                </div>
+                                <div id="detail-ticket-confidence"
+                                    style="font-size:1.4rem;font-weight:700;color:#22C55E;margin-top:0.2rem;">—</div>
+                            </div>
+                        </div>
+
+                        <!-- BATCH 3: AI Confidence Explainer (expandable) -->
+                        <div id="confExplainerCard" style="display:none;margin-bottom:1.75rem;
+                            background:var(--bg-color);border:1px solid var(--border-color);
+                            border-left:4px solid var(--primary-accent);
+                            border-radius:8px;padding:1.25rem;">
+                            <div style="font-size:0.82rem;font-weight:700;text-transform:uppercase;
+                                letter-spacing:0.06em;color:#6b7280;margin-bottom:0.85rem;">
+                                🧠 Why this confidence score?
+                            </div>
+                            <!-- Confidence bar -->
+                            <div style="display:flex;align-items:center;gap:0.85rem;margin-bottom:1rem;">
+                                <div style="flex:1;">
+                                    <div class="conf-bar-track">
+                                        <div class="conf-bar-fill" id="confBarFill" style="width:0%;"></div>
+                                    </div>
+                                </div>
+                                <div id="confBarLabel" style="font-size:0.95rem;font-weight:700;min-width:40px;text-align:right;"></div>
+                            </div>
+                            <!-- Factors -->
+                            <div id="confFactors"></div>
+                            <!-- Routing explanation -->
+                            <div id="confRoutingExplain" style="margin-top:0.85rem;padding:0.75rem 1rem;
+                                border-radius:7px;font-size:0.83rem;font-weight:500;"></div>
+                        </div>
+
+                        <!-- Ticket Name + Description -->
+                        <div style="margin-bottom:1.5rem;">
+                            <div class="block-label">Ticket Name</div>
+                            <div id="detail-ticket-title"
+                                style="font-size:1.2rem;font-weight:700;color:var(--text-color);margin-top:0.3rem;">
+                                Loading...
+                            </div>
+                        </div>
+
+                        <div style="margin-bottom:2.5rem;">
+                            <div class="block-label">Issue Description</div>
+                            <div style="background:var(--bg-color);padding:1.25rem;border-radius:8px;
+                                border:1px solid var(--border-color);font-size:1rem;line-height:1.6;margin-top:0.4rem;">
+                                <span id="detail-ticket-desc">Loading...</span>
+                            </div>
+                        </div>
+
+                        <!-- AI Suggested Solution / Unavailable Box -->
+                        <div id="aiSolutionBox" style="background:#EEF2FF;border:1px solid #C7D2FE;
+                            border-left:4px solid var(--primary-accent);
+                            padding:1.5rem;border-radius:var(--radius);margin-bottom:2rem;">
+                            <div style="margin-bottom:0.85rem;">
+                                <div class="block-label" id="aiSolutionBoxLabel" style="color:#3730A3;">AI Suggested Solution</div>
+                                <div class="block-label" id="aiSolutionBoxSub" style="color:#6366f1;font-size:0.72rem;margin-top:0.1rem;
+                                    text-transform:none;letter-spacing:0;">Step-by-Step Resolution</div>
+                            </div>
+                            <div id="detail-ticket-suggestion" class="solution-steps">
+                                <div style="color:#6366f1;font-style:italic;">Processing recommendation...</div>
+                            </div>
+                        </div>
+
+                        <!-- Resolution Form -->
+                        <div style="border-top:1px solid var(--border-color);padding-top:2rem;"
+                            id="resolutionFormWrapper">
+                            <h3 style="font-size:1.2rem;margin-bottom:1.5rem;">Admin Resolution</h3>
+
+                            <div style="margin-bottom:1.5rem;">
+                                <label style="display:block;font-weight:600;margin-bottom:0.5rem;font-size:0.95rem;">
+                                    Select Resolution Scenario:
+                                </label>
+                                <select id="actionCase"
+                                    style="width:100%;max-width:420px;padding:0.6rem;
+                                    border:1px solid var(--border-color);border-radius:6px;
+                                    font-size:1rem;color:var(--text-color);"
+                                    onchange="toggleResolutionBox()">
+                                    <option value="ai-solved">Case 1 – AI Solved (Confidence ≥ 75%)</option>
+                                    <option value="mixed-solved">Case 2 – AI + Human (Edit AI Solution)</option>
+                                    <option value="human-solved">Case 3 – Human Solved (Manual Override)</option>
+                                </select>
+                            </div>
+
+                            <div id="instructionBoxContainer" style="display:none;margin-bottom:1.5rem;">
+                                <label id="instructionLabel"
+                                    style="display:block;font-weight:600;margin-bottom:0.5rem;font-size:0.95rem;">
+                                    Instruction:
+                                </label>
+                                <textarea id="adminInstruction" rows="5"
+                                    style="width:100%;padding:0.75rem;border:1px solid var(--border-color);
+                                    border-radius:6px;font-size:1rem;font-family:inherit;
+                                    resize:vertical;box-sizing:border-box;"></textarea>
+                            </div>
+
+                            <div style="display:flex;gap:1rem;align-items:center;margin-top:2rem;">
+                                <button type="button" id="btnSubmitResolution"
+                                    class="btn-indigo" onclick="handleResolutionSubmit()">Submit</button>
+                                <button type="button" class="btn-logout"
+                                    onclick="window.location.href='ticket-management.html'">Back</button>
+                            </div>
+                        </div>
+
+                        <!-- Already Resolved -->
+                        <div id="alreadyResolvedNotice"
+                            style="display:none;border-top:1px solid var(--border-color);padding-top:2rem;">
+                            <div style="background:#dcfce7;border:1px solid #bbf7d0;border-radius:8px;
+                                padding:1rem 1.5rem;color:#166534;font-weight:500;">
+                                ✓ This ticket has already been resolved.
+                            </div>
+
+                            <!-- BATCH 5A FIX 3: User Satisfaction Rating — visible to admin -->
+                            <div id="adminRatingView" style="display:none; margin-top:1.25rem;
+                                background:var(--bg-color); border:1px solid var(--border-color);
+                                border-radius:10px; padding:1.25rem;">
+                                <div style="font-size:0.78rem;font-weight:700;text-transform:uppercase;
+                                    letter-spacing:0.06em;color:#6b7280;margin-bottom:0.85rem;">
+                                    ⭐ User Satisfaction Rating
+                                </div>
+                                <div style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap;">
+                                    <div id="adminRatingStars" style="font-size:1.5rem;line-height:1;"></div>
+                                    <div>
+                                        <div id="adminRatingScore" style="font-weight:700;font-size:1rem;
+                                            color:var(--text-color);"></div>
+                                        <div id="adminRatingComment" style="font-size:0.85rem;
+                                            color:#6b7280;margin-top:0.2rem;font-style:italic;"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div id="adminNoRatingView" style="display:none;margin-top:1rem;
+                                font-size:0.85rem;color:#6b7280;">
+                                ⭐ User has not rated this ticket yet.
+                            </div>
+
+                            <div style="margin-top:1rem;">
+                                <button type="button" class="btn-logout"
+                                    onclick="window.location.href='ticket-management.html'">
+                                    Back to Tickets
+                                </button>
+                            </div>
+                        </div>
+
+                    </section>
+                </div>
+
+                <!-- ═══════════════════════════════════════
+                     RIGHT: Admin sidebar panels
+                ════════════════════════════════════════ -->
+                <div style="display:flex;flex-direction:column;gap:1rem;">
+
+                    <!-- BATCH 3: Similar Tickets Detection -->
+                    <div class="sidebar-panel" id="similarPanel">
+                        <div class="sidebar-panel-header" onclick="togglePanel('similarPanel')">
+                            🔍 Similar Resolved Tickets
+                            <span class="collapse-icon">▾</span>
+                        </div>
+                        <div class="sidebar-panel-body">
+                            <div id="similarTicketsList">
+                                <div style="color:#6b7280;font-size:0.85rem;">Loading...</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- BATCH 3: Admin Notes -->
+                    <div class="sidebar-panel" id="notesPanel">
+                        <div class="sidebar-panel-header" onclick="togglePanel('notesPanel')">
+                            📝 Internal Admin Notes
+                            <span class="collapse-icon">▾</span>
+                        </div>
+                        <div class="sidebar-panel-body">
+                            <div style="font-size:0.78rem;color:#6b7280;margin-bottom:0.6rem;">
+                                Notes are private — never visible to users.
+                            </div>
+                            <textarea id="adminNotesInput" class="notes-textarea"
+                                placeholder="e.g. Called user, confirmed hardware issue. Escalating to IT team..."></textarea>
+                            <button class="btn-save-notes" onclick="saveAdminNotes()">
+                                Save Notes
+                            </button>
+                            <div class="notes-saved-msg" id="notesSavedMsg">✓ Notes saved!</div>
+                        </div>
+                    </div>
+
+                    <!-- BATCH 3: Priority Override -->
+                    <div class="sidebar-panel" id="priorityPanel">
+                        <div class="sidebar-panel-header" onclick="togglePanel('priorityPanel')">
+                            🎯 Override Priority
+                            <span class="collapse-icon">▾</span>
+                        </div>
+                        <div class="sidebar-panel-body">
+                            <div class="priority-current" id="priorityCurrentLabel">
+                                Current: <strong>—</strong>
+                            </div>
+                            <select id="priorityOverrideSelect" class="priority-select">
+                                <option value="HIGH">🔴 High</option>
+                                <option value="MEDIUM">🟡 Medium</option>
+                                <option value="LOW">🟢 Low</option>
+                            </select>
+                            <input type="text" id="priorityOverrideReasonInput"
+                                class="priority-reason-input"
+                                placeholder="Reason for override (optional)...">
+                            <button class="btn-save-priority" onclick="savePriorityOverride()">
+                                Apply Override
+                            </button>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <script src="common.js"></script>
+    <script src="theme.js"></script>
+    <script src="admin-dashboard.js"></script>
+    <script>
+        let currentTicket = null;
+
+        // ── Panel collapse toggle ────────────────────────────────────────────
+        function togglePanel(id) {
+            document.getElementById(id).classList.toggle('collapsed');
+        }
+
+        // ── Step card renderer ───────────────────────────────────────────────
+        function renderSolutionSteps(rawText, containerId) {
+            const container = document.getElementById(containerId);
+            if (!container) return;
+            if (!rawText || rawText.trim() === "") {
+                container.innerHTML = '<div style="color:#6366f1;font-style:italic;">No AI solution available — manual resolution required.</div>';
+                return;
+            }
+            let cleaned = rawText.replace(/\*\*/g,"").replace(/[#]{1,6}\s*/g,"")
+                .replace(/^---+$/gm,"").replace(/^\s*[-*]\s+/gm,"").trim();
+            const lines     = cleaned.split("\n").map(l=>l.trim()).filter(l=>l.length>5);
+            const stepRegex = /^step\s*\d+\s*[:\-.]?\s*/i;
+            const stepLines = lines.filter(l=>stepRegex.test(l));
+            const render    = stepLines.length>=2 ? stepLines : lines.filter(l=>l.length>10).slice(0,7);
+            const wrap = document.createElement("div");
+            wrap.className = "solution-steps";
+            if (render.length === 0) {
+                const div = document.createElement("div");
+                div.className = "solution-step";
+                div.innerHTML = `<div class="step-number">1</div><div class="step-text">${cleaned}</div>`;
+                wrap.appendChild(div);
+            } else {
+                render.forEach((line,i) => {
+                    const text = line.replace(stepRegex,"").trim()||line;
+                    const div  = document.createElement("div");
+                    div.className = "solution-step";
+                    div.innerHTML = `<div class="step-number">${i+1}</div><div class="step-text">${text}</div>`;
+                    wrap.appendChild(div);
+                });
+            }
+            container.innerHTML = "";
+            container.appendChild(wrap);
+        }
+
+        // ── Page init ────────────────────────────────────────────────────────
+        document.addEventListener("DOMContentLoaded", async () => {
+            await loadAdminProfile();
+            const ticketId = localStorage.getItem("currentAdminTicketId");
+            if (!ticketId) { window.location.href="ticket-management.html"; return; }
+            try {
+                const res = await fetch(`${API_BASE_URL}/tickets/${ticketId}`, { headers: getAuthHeaders() });
+                if (!res.ok) {
+                    showToast("Ticket not found","error");
+                    setTimeout(()=>window.location.href="ticket-management.html",1500);
+                    return;
+                }
+                currentTicket = await res.json();
+                populateDetail(currentTicket);
+                loadSimilarTickets(ticketId);
+
+                // BATCH 5C: Acquire ticket lock
+                if (currentTicket.status !== "RESOLVED") {
+                    acquireTicketLock(ticketId);
+                }
+            } catch (err) {
+                showToast("Failed to load ticket","error");
+            }
+        });
+
+        // BATCH 5C: Ticket lock logic ───────────────────────────────────────
+        let _lockHeartbeat = null;
+
+        async function acquireTicketLock(ticketId) {
+            try {
+                const res = await fetch(`${API_BASE_URL}/admin/tickets/${ticketId}/lock`, {
+                    method: "POST", headers: getAuthHeaders()
+                });
+                if (!res.ok) return;
+                const data = await res.json();
+
+                if (data.lockedByMe) {
+                    // We got the lock — start heartbeat every 3 minutes
+                    _lockHeartbeat = setInterval(() => {
+                        fetch(`${API_BASE_URL}/admin/tickets/${ticketId}/lock/refresh`, {
+                            method: "POST", headers: getAuthHeaders()
+                        });
+                    }, 180000);
+                    // Release lock on page leave
+                    window.addEventListener("beforeunload", () => {
+                        fetch(`${API_BASE_URL}/admin/tickets/${ticketId}/lock`, {
+                            method: "DELETE", headers: getAuthHeaders(), keepalive: true
+                        });
+                    });
+                } else {
+                    // Another admin has the lock — show warning banner
+                    const adminName = data.adminName || "Another admin";
+                    const banner    = document.getElementById("ticketLockBanner");
+                    const title     = document.getElementById("lockBannerTitle");
+                    const msg       = document.getElementById("lockBannerMsg");
+                    if (banner) banner.style.display = "flex";
+                    if (title)  title.textContent = `🔧 ${adminName} is currently resolving this ticket`;
+                    if (msg)    msg.textContent   = "You can view the ticket but cannot resolve it until they finish or their session expires.";
+                    // Disable the resolve form
+                    const form = document.getElementById("resolutionFormWrapper");
+                    if (form) {
+                        form.style.opacity      = "0.45";
+                        form.style.pointerEvents = "none";
+                    }
+                    // Poll every 15s to check if lock is released
+                    const pollLock = setInterval(async () => {
+                        const r = await fetch(`${API_BASE_URL}/admin/tickets/${ticketId}/lock`,
+                            { headers: getAuthHeaders() });
+                        if (!r.ok) return;
+                        const d = await r.json();
+                        if (!d.locked) {
+                            clearInterval(pollLock);
+                            if (banner) banner.style.display = "none";
+                            if (form) { form.style.opacity = ""; form.style.pointerEvents = ""; }
+                            showToast("Lock released — you can now resolve this ticket.", "success");
+                            acquireTicketLock(ticketId); // try to acquire now
+                        }
+                    }, 15000);
+                }
+            } catch(e) { /* silent — lock is non-critical */ }
+        }
+
+        // ── Populate all ticket fields ───────────────────────────────────────
+        function populateDetail(ticket) {
+            const set = (id, val) => { const el=document.getElementById(id); if(el) el.innerText=val||"—"; };
+
+            set("detail-ticket-id",       ticket.ticketNumber || "#"+ticket.id);
+            set("detail-ticket-date",     formatDate(ticket.createdAt));
+            set("detail-ticket-category", ticket.category || "General");
+            set("detail-ticket-title",    ticket.title);
+            set("detail-ticket-desc",     ticket.description);
+
+            // User link
+            const userEl = document.getElementById("detail-ticket-user");
+            if (userEl && ticket.user) {
+                userEl.innerHTML = `<a href="profile.html?userId=${ticket.user.id}"
+                    class="user-profile-link" title="View ${ticket.user.name}'s profile">
+                    ${ticket.user.name}</a>`;
+            } else if (userEl) { userEl.innerText = "Unknown"; }
+
+            // Confidence
+            const isApiUnavailable = ticket.aiConfidence === null || ticket.aiConfidence === undefined;
+            const isNonTechTicket  = ticket.aiResolutionType === "NON_TECHNICAL";
+            const conf   = isApiUnavailable ? null : ticket.aiConfidence;
+            const confEl = document.getElementById("detail-ticket-confidence");
+            if (confEl) {
+                if (isApiUnavailable) {
+                    confEl.innerText      = "—";
+                    confEl.style.color    = "#9ca3af";
+                    confEl.style.fontSize = "1.4rem";
+                } else if (isNonTechTicket) {
+                    // NON_TECHNICAL: show 0% but NO "Why?" explainer / no admin review routing
+                    confEl.innerText   = "0%";
+                    confEl.style.color = "#9ca3af";
+                    confEl.style.fontSize = "1.4rem";
+                    // Hide the Why? toggle entirely for non-technical
+                    const tog = document.getElementById("confExplainerToggle");
+                    if (tog) tog.style.display = "none";
+                } else {
+                    confEl.innerText   = conf + "%";
+                    confEl.style.color = conf>=75?"#22C55E":conf>=50?"#F59E0B":"#EF4444";
+                    // Show "Why?" toggle only for genuine technical tickets
+                    const tog = document.getElementById("confExplainerToggle");
+                    if (tog) tog.style.display = "inline";
+                    // Render explainer content
+                    renderConfExplainer(conf, ticket);
+                }
+            }
+
+            // Priority badge
+            const pMap = {
+                HIGH:  {bg:"#fee2e2",color:"#991b1b",border:"#fecaca"},
+                MEDIUM:{bg:"#fef3c7",color:"#92400e",border:"#fde68a"},
+                LOW:   {bg:"#f0fdf4",color:"#166534",border:"#bbf7d0"}
+            };
+            const prioEl = document.getElementById("detail-ticket-priority");
+            if (prioEl && ticket.priority) {
+                const pp = pMap[ticket.priority] || pMap.MEDIUM;
+                prioEl.innerHTML = `<span style="background:${pp.bg};color:${pp.color};
+                    border:1px solid ${pp.border};padding:3px 10px;
+                    border-radius:99px;font-size:0.8rem;font-weight:600;">
+                    ${ticket.priority.charAt(0)+ticket.priority.slice(1).toLowerCase()}
+                </span>`;
+            }
+
+            // Priority override tag
+            if (ticket.priorityOverrideReason) {
+                const tag = document.getElementById("priorityOverrideTag");
+                if (tag) tag.style.display = "inline";
+                const reasonEl = document.getElementById("priorityOverrideReason");
+                if (reasonEl) {
+                    reasonEl.style.display = "block";
+                    reasonEl.textContent   = "Override reason: " + ticket.priorityOverrideReason;
+                }
+            }
+
+            // Set priority panel current label & selector
+            const prioLabel = document.getElementById("priorityCurrentLabel");
+            if (prioLabel) prioLabel.innerHTML = `Current: <strong>${ticket.priority || "—"}</strong>`;
+            const prioSel = document.getElementById("priorityOverrideSelect");
+            if (prioSel && ticket.priority) prioSel.value = ticket.priority;
+
+            // Status badge
+            const statusEl = document.getElementById("detail-ticket-status");
+            if (statusEl) {
+                if      (ticket.status==="RESOLVED"&&ticket.aiResolutionType==="AUTO")
+                    statusEl.innerHTML='<span class="badge-admin badge-aisolved" style="white-space:nowrap;">AI Solved</span>';
+                else if (ticket.status==="RESOLVED")
+                    statusEl.innerHTML='<span class="badge-admin badge-mixed" style="white-space:nowrap;">Resolved</span>';
+                else if (ticket.status==="IN_PROGRESS")
+                    statusEl.innerHTML='<span class="badge-admin badge-human" style="white-space:nowrap;">Needs Review</span>';
+                else
+                    statusEl.innerHTML='<span class="badge-admin badge-open" style="white-space:nowrap;">Open</span>';
+            }
+
+            // Ticket Type badge
+            const typeEl = document.getElementById("detail-ticket-type");
+            if (typeEl) {
+                const isNonTech = ticket.aiConfidence === 0 &&
+                    (ticket.aiResolutionType === "NON_TECHNICAL" || ticket.aiResolutionType === "MANUAL");
+                typeEl.innerHTML = isNonTech
+                    ? `<span style="background:#fee2e2;color:#991b1b;border:1px solid #fecaca;
+                        padding:5px 14px;border-radius:99px;font-size:0.82rem;font-weight:700;
+                        white-space:nowrap;">⚠ Non-Technical Ticket</span>`
+                    : `<span style="background:#dcfce7;color:#166534;border:1px solid #bbf7d0;
+                        padding:5px 14px;border-radius:99px;font-size:0.82rem;font-weight:700;
+                        white-space:nowrap;">✓ Technical Ticket</span>`;
+            }
+
+            // AI solution steps
+            renderSolutionSteps(ticket.solution || "", "detail-ticket-suggestion");
+
+            // MOD 5: Dynamically update AI solution box label
+            const solutionLabel = document.getElementById("aiSolutionBoxLabel");
+            const solutionSub   = document.getElementById("aiSolutionBoxSub");
+            const solutionBox   = document.getElementById("aiSolutionBox");
+            const apiUnavail    = isApiUnavailable || (ticket.aiResolutionType === "MANUAL" &&
+                                  (ticket.aiConfidence === null || ticket.aiConfidence === undefined));
+            if (apiUnavail) {
+                if (solutionBox) { solutionBox.style.background="rgba(255,247,237,0.4)";
+                    solutionBox.style.borderColor="#fed7aa";
+                    solutionBox.style.borderLeftColor="#f97316"; }
+                if (solutionLabel) { solutionLabel.textContent="No AI Solution Available";
+                    solutionLabel.style.color="#c2410c"; }
+                if (solutionSub)   { solutionSub.textContent="AI service was unavailable — admin must resolve manually";
+                    solutionSub.style.color="#ea580c"; }
+            } else if (ticket.aiResolutionType === "NON_TECHNICAL") {
+                if (solutionBox) { solutionBox.style.background="rgba(254,242,242,0.5)";
+                    solutionBox.style.borderColor="#fecaca";
+                    solutionBox.style.borderLeftColor="#ef4444"; }
+                if (solutionLabel) { solutionLabel.textContent="AI Auto-Rejection Message";
+                    solutionLabel.style.color="#991b1b"; }
+                if (solutionSub)   { solutionSub.textContent="Sent to user explaining why this ticket was rejected";
+                    solutionSub.style.color="#dc2626"; }
+            }
+
+            // Admin notes
+            const notesInput = document.getElementById("adminNotesInput");
+            if (notesInput && ticket.adminNotes) {
+                notesInput.value = ticket.adminNotes;
+            }
+
+            // Already resolved?
+            if (ticket.status === "RESOLVED") {
+                document.getElementById("resolutionFormWrapper").style.display  = "none";
+                document.getElementById("alreadyResolvedNotice").style.display  = "block";
+
+                // FIX 3: Show satisfaction rating if user rated this ticket
+                if (ticket.satisfactionRating && ticket.satisfactionRating > 0) {
+                    var rView = document.getElementById("adminRatingView");
+                    var stars = document.getElementById("adminRatingStars");
+                    var score = document.getElementById("adminRatingScore");
+                    var comment = document.getElementById("adminRatingComment");
+                    if (rView) rView.style.display = "block";
+                    if (stars) stars.textContent = "⭐".repeat(ticket.satisfactionRating);
+                    if (score) score.textContent = ticket.satisfactionRating + " / 5 stars";
+                    var labels = ["","😞 Poor","😐 Fair","🙂 Good","😊 Great","🤩 Excellent"];
+                    if (score) score.textContent = ticket.satisfactionRating + "/5 — " + (labels[ticket.satisfactionRating] || "");
+                    if (comment && ticket.satisfactionComment)
+                        comment.textContent = "\"" + ticket.satisfactionComment + "\"";
+                } else {
+                    var noRate = document.getElementById("adminNoRatingView");
+                    if (noRate) noRate.style.display = "block";
+                }
+                return;
+            }
+
+            // Pre-select resolution scenario
+            const sel = document.getElementById("actionCase");
+            if (isApiUnavailable) {
+                const opt1 = sel.querySelector('option[value="ai-solved"]');
+                const opt2 = sel.querySelector('option[value="mixed-solved"]');
+                if (opt1) opt1.style.display = "none";
+                if (opt2) opt2.style.display = "none";
+                sel.value = "human-solved";
+                sel.style.pointerEvents = "none";
+                sel.style.opacity       = "0.7";
+                const formWrapper = document.getElementById("resolutionFormWrapper");
+                if (formWrapper && !document.getElementById("apiUnavailableBanner")) {
+                    const banner = document.createElement("div");
+                    banner.id = "apiUnavailableBanner";
+                    banner.style.cssText = `background:#fff7ed;border:1px solid #fed7aa;
+                        border-left:4px solid #f97316;border-radius:8px;
+                        padding:0.85rem 1.25rem;margin-bottom:1.5rem;
+                        font-size:0.88rem;color:#c2410c;line-height:1.5;`;
+                    banner.innerHTML = `<strong>⚠ AI Unavailable:</strong> No AI solution exists for this ticket.
+                        Only <strong>Case 3 – Human Solved</strong> is available.`;
+                    formWrapper.insertBefore(banner, formWrapper.firstChild);
+                }
+            } else {
+                if      (conf >= 75) sel.value = "ai-solved";
+                else if (conf >= 50) sel.value = "mixed-solved";
+                else                 sel.value = "human-solved";
+            }
+            toggleResolutionBox();
+        }
+
+        // ── BATCH 3: AI Confidence Explainer ────────────────────────────────
+        function renderConfExplainer(conf, ticket) {
+            const barFill   = document.getElementById("confBarFill");
+            const barLabel  = document.getElementById("confBarLabel");
+            const factors   = document.getElementById("confFactors");
+            const routing   = document.getElementById("confRoutingExplain");
+            if (!barFill || !factors) return;
+
+            // Bar colour
+            const barColor = conf >= 75 ? "#22c55e" : conf >= 50 ? "#f59e0b" : "#ef4444";
+            barFill.style.width      = conf + "%";
+            barFill.style.background = barColor;
+            if (barLabel) { barLabel.textContent = conf + "%"; barLabel.style.color = barColor; }
+
+            // Build scoring factors based on confidence range
+            const factorsList = [];
+
+            if (conf >= 75) {
+                factorsList.push({ icon:"✅", text:"Issue is clearly technical (IT-related)", status:"pass" });
+                factorsList.push({ icon:"✅", text:"Standard, well-known solution exists", status:"pass" });
+                factorsList.push({ icon:"✅", text:"Problem description is specific and clear", status:"pass" });
+                if (conf >= 90)
+                    factorsList.push({ icon:"✅", text:"Single-step fix — no diagnosis needed", status:"pass" });
+            } else if (conf >= 50) {
+                factorsList.push({ icon:"✅", text:"Issue is technical (IT-related)", status:"pass" });
+                factorsList.push({ icon:"⚠️", text:"Solution may vary by environment or system", status:"warn" });
+                factorsList.push({ icon:"⚠️", text:"Multiple diagnosis steps may be needed", status:"warn" });
+            } else {
+                factorsList.push({ icon:"✅", text:"Issue appears to be technical", status:"pass" });
+                factorsList.push({ icon:"❌", text:"Issue description is vague or unclear", status:"fail" });
+                factorsList.push({ icon:"❌", text:"May require physical inspection or access", status:"fail" });
+            }
+
+            const statusStyles = {
+                pass: { bg:"#dcfce7", color:"#166534" },
+                warn: { bg:"#fef3c7", color:"#92400e" },
+                fail: { bg:"#fee2e2", color:"#991b1b" }
+            };
+
+            factors.innerHTML = factorsList.map(f => {
+                const s = statusStyles[f.status];
+                return `<div class="conf-factor">
+                    <span class="conf-factor-icon">${f.icon}</span>
+                    <span class="conf-factor-text">${f.text}</span>
+                    <span class="conf-factor-badge" style="background:${s.bg};color:${s.color};">
+                        ${f.status === "pass" ? "Pass" : f.status === "warn" ? "Caution" : "Flag"}
+                    </span>
+                </div>`;
+            }).join("");
+
+            // Routing explanation
+            if (routing) {
+                if (conf >= 75) {
+                    routing.style.background = "#dcfce7";
+                    routing.style.color      = "#166534";
+                    routing.innerHTML = `✅ <strong>Routed: AUTO</strong> — Confidence ≥ 75% means AI can resolve this automatically without admin intervention.`;
+                } else {
+                    routing.style.background = "#fef3c7";
+                    routing.style.color      = "#92400e";
+                    routing.innerHTML = `⚠️ <strong>Routed: Admin Review</strong> — Confidence below 75% means the AI is not confident enough to auto-resolve. Your review is required.`;
+                }
+            }
+        }
+
+        function toggleConfExplainer() {
+            const card = document.getElementById("confExplainerCard");
+            const tog  = document.getElementById("confExplainerToggle");
+            if (!card) return;
+            const isOpen = card.style.display !== "none";
+            card.style.display = isOpen ? "none" : "block";
+            if (tog) tog.textContent = isOpen ? "Why? ▾" : "Why? ▴";
+        }
+
+        // ── BATCH 3: Similar Tickets ─────────────────────────────────────────
+        async function loadSimilarTickets(ticketId) {
+            const container = document.getElementById("similarTicketsList");
+            if (!container) return;
+            try {
+                const res = await fetch(
+                    `${API_BASE_URL}/admin/tickets/${ticketId}/similar`,
+                    { headers: getAuthHeaders() }
+                );
+                if (!res.ok) { container.innerHTML = '<div style="color:#6b7280;font-size:0.85rem;">Could not load.</div>'; return; }
+                const tickets = await res.json();
+                if (tickets.length === 0) {
+                    container.innerHTML = '<div style="color:#6b7280;font-size:0.85rem;">No similar resolved tickets found.</div>';
+                    return;
+                }
+                container.innerHTML = tickets.map(t => `
+                    <div class="similar-ticket">
+                        <div class="similar-ticket-title" title="${t.title}">${t.title}</div>
+                        <div class="similar-ticket-meta">
+                            ${t.ticketNumber || "#"+t.id} &middot; ${formatDate(t.createdAt)}
+                            ${t.aiResolutionType === "AUTO"
+                                ? ' &middot; <span style="color:#16a34a;font-weight:600;">🤖 AI</span>'
+                                : ' &middot; <span style="color:#1e40af;font-weight:600;">👤 Admin</span>'}
+                        </div>
+                        <button class="similar-ticket-copy"
+                            onclick="copySimilarSolution(${JSON.stringify(t.solution||"").replace(/"/g,'&quot;')})">
+                            Copy Solution
+                        </button>
+                    </div>
+                `).join("");
+            } catch (e) {
+                container.innerHTML = '<div style="color:#6b7280;font-size:0.85rem;">Error loading similar tickets.</div>';
+            }
+        }
+
+        function copySimilarSolution(solution) {
+            if (!solution) { showToast("No solution available for this ticket","warning"); return; }
+            // Paste into the instruction textarea
+            const textarea = document.getElementById("adminInstruction");
+            if (textarea) {
+                textarea.value = solution;
+                // Switch to mixed-solved scenario
+                const sel = document.getElementById("actionCase");
+                if (sel && sel.value !== "human-solved") {
+                    sel.value = "mixed-solved";
+                    toggleResolutionBox();
+                }
+                showToast("Solution copied to resolution box! Review and edit as needed.", "success");
+                textarea.scrollIntoView({ behavior:"smooth", block:"center" });
+            } else {
+                copyToClipboard(solution, event.target);
+            }
+        }
+
+        // ── BATCH 3: Admin Notes ─────────────────────────────────────────────
+        async function saveAdminNotes() {
+            const ticketId = localStorage.getItem("currentAdminTicketId");
+            const notes    = document.getElementById("adminNotesInput").value;
+            try {
+                const res = await fetch(
+                    `${API_BASE_URL}/admin/tickets/${ticketId}/notes`,
+                    { method:"PATCH", headers:getAuthHeaders(),
+                      body: JSON.stringify({ notes }) }
+                );
+                if (!res.ok) { showToast("Failed to save notes","error"); return; }
+                const msg = document.getElementById("notesSavedMsg");
+                if (msg) {
+                    msg.style.display = "block";
+                    setTimeout(() => { msg.style.display = "none"; }, 2500);
+                }
+            } catch (e) {
+                showToast("Server error saving notes","error");
+            }
+        }
+
+        // ── BATCH 3: Priority Override ───────────────────────────────────────
+        async function savePriorityOverride() {
+            const ticketId = localStorage.getItem("currentAdminTicketId");
+            const priority = document.getElementById("priorityOverrideSelect").value;
+            const reason   = document.getElementById("priorityOverrideReasonInput").value.trim();
+            try {
+                const res = await fetch(
+                    `${API_BASE_URL}/admin/tickets/${ticketId}/priority`,
+                    { method:"PATCH", headers:getAuthHeaders(),
+                      body: JSON.stringify({ priority, reason }) }
+                );
+                if (!res.ok) { showToast("Failed to update priority","error"); return; }
+                const updated = await res.json();
+
+                // Refresh priority display
+                const pMap = {
+                    HIGH:  {bg:"#fee2e2",color:"#991b1b",border:"#fecaca"},
+                    MEDIUM:{bg:"#fef3c7",color:"#92400e",border:"#fde68a"},
+                    LOW:   {bg:"#f0fdf4",color:"#166534",border:"#bbf7d0"}
+                };
+                const prioEl = document.getElementById("detail-ticket-priority");
+                if (prioEl && updated.priority) {
+                    const pp = pMap[updated.priority] || pMap.MEDIUM;
+                    prioEl.innerHTML = `<span style="background:${pp.bg};color:${pp.color};
+                        border:1px solid ${pp.border};padding:3px 10px;
+                        border-radius:99px;font-size:0.8rem;font-weight:600;">
+                        ${updated.priority.charAt(0)+updated.priority.slice(1).toLowerCase()}
+                    </span>`;
+                }
+                const tag = document.getElementById("priorityOverrideTag");
+                if (tag) tag.style.display = "inline";
+                const prioLabel = document.getElementById("priorityCurrentLabel");
+                if (prioLabel) prioLabel.innerHTML = `Current: <strong>${updated.priority}</strong>`;
+                if (reason) {
+                    const reasonEl = document.getElementById("priorityOverrideReason");
+                    if (reasonEl) { reasonEl.style.display="block"; reasonEl.textContent="Override reason: "+reason; }
+                }
+                showToast("Priority updated to " + priority + "!", "success");
+                document.getElementById("priorityOverrideReasonInput").value = "";
+            } catch (e) {
+                showToast("Server error updating priority","error");
+            }
+        }
+
+        // ── Resolution form ──────────────────────────────────────────────────
+        function toggleResolutionBox() {
+            const scenario  = document.getElementById("actionCase").value;
+            const container = document.getElementById("instructionBoxContainer");
+            const label     = document.getElementById("instructionLabel");
+            const textarea  = document.getElementById("adminInstruction");
+            const submitBtn = document.getElementById("btnSubmitResolution");
+
+            if (scenario === "ai-solved") {
+                container.style.display = "none";
+                submitBtn.textContent   = "Mark as AI Solved";
+            } else if (scenario === "mixed-solved") {
+                container.style.display = "block";
+                label.innerText         = "Edit AI Solution (required):";
+                textarea.value          = currentTicket ? (currentTicket.solution||"") : "";
+                textarea.placeholder    = "Edit the AI solution...";
+                submitBtn.textContent   = "Submit Resolution";
+            } else {
+                container.style.display = "block";
+                label.innerText         = "Manual Solution (required):";
+                textarea.value          = "";
+                textarea.placeholder    = "Write the complete step-by-step resolution...";
+                submitBtn.textContent   = "Submit Resolution";
+            }
+        }
+
+        async function handleResolutionSubmit() {
+            const scenario    = document.getElementById("actionCase").value;
+            const instruction = document.getElementById("adminInstruction").value.trim();
+            const ticketId    = localStorage.getItem("currentAdminTicketId");
+
+            if ((scenario==="mixed-solved"||scenario==="human-solved") && !instruction) {
+                showToast("Please enter a resolution before submitting","warning");
+                return;
+            }
+
+            let solution = "", aiResolutionType = "";
+            if      (scenario==="ai-solved")   { solution=currentTicket.solution||""; aiResolutionType="AUTO"; }
+            else if (scenario==="mixed-solved") { solution=instruction; aiResolutionType="AI_HUMAN"; }
+            else                               { solution=instruction; aiResolutionType="MANUAL"; }
+
+            try {
+                const res = await fetch(
+                    `${API_BASE_URL}/admin/tickets/${ticketId}/resolve`,
+                    { method:"POST", headers:getAuthHeaders(),
+                      body: JSON.stringify({ solution, status:"RESOLVED", aiResolutionType }) }
+                );
+                if (!res.ok) {
+                    const err = await res.json();
+                    showToast(err.message||"Failed to resolve ticket","error");
+                    return;
+                }
+                showToast("Ticket resolved successfully!","success");
+                setTimeout(() => window.location.href="ticket-management.html", 1500);
+            } catch (err) {
+                showToast("Server error. Please try again.","error");
+            }
+        }
+    </script>
+
+>
+
+
+    <script>
+    // BATCH 5A: Track admin last-seen for online/offline status
+    (function() {
+        var userId = localStorage.getItem("currentUserId");
+        if (userId && localStorage.getItem("role") === "ADMIN") {
+            localStorage.setItem("adminLastSeen_" + userId, Date.now().toString());
+        }
+    })();
+    </script>
+</body>
+</html>

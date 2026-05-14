@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Profile - ResolviaAI</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="admin-dashboard.css">
+    <style>
+        .profile-wrapper { max-width: 760px; margin: 0 auto; }
+        .pv-card {
+            background: var(--card-bg); border: 1px solid var(--border-color);
+            border-radius: 14px; padding: 1.75rem 2rem; margin-bottom: 1.25rem;
+        }
+        [data-theme="dark"] .pv-card { background: #1e293b; border-color: #334155; }
+        .pv-header-row { display:flex; align-items:center; gap:1.5rem; flex-wrap:wrap; }
+        .pv-avatar {
+            width:72px; height:72px; border-radius:50%;
+            background:linear-gradient(135deg,#4f46e5,#6366f1);
+            color:#fff; font-size:1.8rem; font-weight:800;
+            display:flex; align-items:center; justify-content:center;
+            flex-shrink:0; position:relative; overflow:hidden;
+        }
+        .pv-online-dot {
+            position:absolute; bottom:2px; right:2px; width:14px; height:14px;
+            border-radius:50%; border:2.5px solid var(--card-bg); z-index:2;
+        }
+        [data-theme="dark"] .pv-online-dot { border-color:#1e293b; }
+        .pv-name  { font-size:1.35rem; font-weight:800; color:var(--text-color); }
+        [data-theme="dark"] .pv-name { color:#f1f5f9; }
+        .pv-un    { font-size:0.85rem; color:#6366f1; font-weight:600; margin-top:2px; }
+        .pv-email { font-size:0.85rem; color:#6b7280; margin-top:2px; }
+        .pv-badges { display:flex; gap:0.5rem; margin-top:0.5rem; flex-wrap:wrap; align-items:center; }
+        .badge-admin   { background:#ede9fe; color:#5b21b6; border-radius:99px; font-size:0.75rem; font-weight:700; padding:3px 12px; }
+        .badge-online  { background:#dcfce7; color:#166534; border-radius:99px; font-size:0.75rem; font-weight:700; padding:3px 12px; }
+        .badge-offline { background:#f1f5f9; color:#374151; border-radius:99px; font-size:0.75rem; font-weight:700; padding:3px 12px; }
+        [data-theme="dark"] .badge-admin   { background:#312e81; color:#c4b5fd; }
+        [data-theme="dark"] .badge-online  { background:#064e3b; color:#6ee7b7; }
+        [data-theme="dark"] .badge-offline { background:#1e293b; color:#94a3b8; }
+        .msg-btn {
+            margin-left:auto; padding:0.6rem 1.5rem; border-radius:10px; border:none;
+            background:linear-gradient(135deg,#4f46e5,#6366f1); color:#fff;
+            font-size:0.9rem; font-weight:700; cursor:pointer; font-family:inherit;
+            display:flex; align-items:center; gap:0.5rem; transition:opacity 0.2s; flex-shrink:0;
+        }
+        .msg-btn:hover { opacity:0.85; }
+        .stat-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:1rem; margin-top:1rem; }
+        .stat-box  { background:var(--bg-color); border:1px solid var(--border-color); border-radius:10px; padding:1.1rem; text-align:center; }
+        [data-theme="dark"] .stat-box { background:#0f172a; border-color:#334155; }
+        .stat-num  { font-size:1.8rem; font-weight:800; color:#4f46e5; }
+        .stat-lbl  { font-size:0.72rem; font-weight:700; text-transform:uppercase; letter-spacing:0.06em; color:#6b7280; margin-bottom:0.3rem; }
+        @media (max-width:640px) {
+            .pv-header-row { flex-direction:column; align-items:flex-start; gap:1rem; }
+            .msg-btn { margin-left:0; width:100%; justify-content:center; }
+            .stat-grid { grid-template-columns:1fr 1fr; }
+            .pv-card { padding:1.25rem; }
+        }
+        @media (max-width:400px) { .stat-grid { grid-template-columns:1fr; } }
+    </style>
+</head>
+<body class="admin-body">
+
+    <aside class="sidebar" id="adminSidebar">
+        <div class="sidebar-header"><h2>ResolviaAI</h2></div>
+        <ul class="sidebar-menu">
+            <li><a href="admin-dashboard.html">Dashboard</a></li>
+            <li><a href="ticket-management.html">Ticket Management</a></li>
+            <li><a href="ai-decision-panel.html">AI Decision Panel</a></li>
+                        <li><a href="admin-activity-log.html">Activity Log</a></li>
+<li class="active"><a href="admin-profile.html">My Profile</a></li>
+            <li><a href="admin-settings.html">Settings</a></li>
+        </ul>
+    </aside>
+
+    <div class="main-wrapper">
+        <nav class="admin-nav">
+            <div class="nav-title" id="pageNavTitle">Admin Profile</div>
+            <div class="nav-right">
+                <button class="theme-toggle-btn" onclick="toggleTheme()">🌙</button>
+                <div class="user-profile" onclick="window.location.href='admin-profile.html'" style="cursor:pointer;">
+                    <div class="avatar-circle" id="myAdminAvatar">A</div>
+                    <span class="user-name" id="myAdminNameText">Admin</span>
+                </div>
+                <button class="btn-logout" onclick="handleLogout()">Logout</button>
+            </div>
+        </nav>
+
+        <main class="admin-content">
+            <div class="profile-wrapper">
+                <a href="admin-profile.html" style="display:inline-flex;align-items:center;gap:0.4rem;
+                    color:var(--primary-accent);font-size:0.88rem;text-decoration:none;
+                    margin-bottom:1.25rem;font-weight:600;">← Back to My Profile</a>
+
+                <!-- Profile Card -->
+                <div class="pv-card">
+                    <div class="pv-header-row">
+                        <div class="pv-avatar" id="viewAdminAvatar">A
+                            <span class="pv-online-dot" id="viewOnlineDot" style="background:#94a3b8;"></span>
+                        </div>
+                        <div style="flex:1;min-width:0;">
+                            <div class="pv-name"  id="viewAdminName">Loading...</div>
+                            <div class="pv-un"    id="viewAdminUsername">@—</div>
+                            <div class="pv-email" id="viewAdminEmail"></div>
+                            <div class="pv-badges">
+                                <span class="badge-admin">🛡 Administrator</span>
+                                <span id="viewOnlineBadge" class="badge-offline">⚫ Offline</span>
+                                <span id="viewAdminSince" style="font-size:0.75rem;color:#6b7280;"></span>
+                            </div>
+                        </div>
+                        <button class="msg-btn" onclick="openChatWithAdmin()">💬 Message</button>
+                    </div>
+                </div>
+
+                <!-- Stats Card -->
+                <div class="pv-card">
+                    <div style="font-size:0.95rem;font-weight:700;color:var(--text-color);
+                        margin-bottom:0.5rem;padding-bottom:0.75rem;border-bottom:1px solid var(--border-color);">
+                        📊 Performance Stats
+                        <span style="font-size:0.72rem;color:#6b7280;font-weight:400;margin-left:0.4rem;">
+                            Visible to admins only
+                        </span>
+                    </div>
+                    <div class="stat-grid">
+                        <div class="stat-box">
+                            <div class="stat-lbl">Tickets Solved</div>
+                            <div class="stat-num" id="vStatSolved">—</div>
+                        </div>
+                        <div class="stat-box">
+                            <div class="stat-lbl">Users Blocked</div>
+                            <div class="stat-num" style="color:#ef4444;" id="vStatBlocked">—</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="common.js"></script>
+    <script src="theme.js"></script>
+    <script src="admin-dashboard.js"></script>
+    <script>
+    let _viewAdminId = null;
+
+    document.addEventListener("DOMContentLoaded", async () => {
+        if (!requireAdmin()) return;
+        try {
+            const me = await fetch(API_BASE_URL + "/user/profile", { headers: getAuthHeaders() });
+            if (me.ok) {
+                const d = await me.json();
+                const av = document.getElementById("myAdminAvatar");
+                const nm = document.getElementById("myAdminNameText");
+                if (av) av.textContent = (d.name || "A").charAt(0).toUpperCase();
+                if (nm) nm.textContent = "Admin: " + d.name;
+                if (d.id) {
+                    localStorage.setItem("currentUserId", d.id);
+                    localStorage.setItem("adminLastSeen_" + d.id, Date.now());
+                }
+            }
+        } catch(e) {}
+
+        const params  = new URLSearchParams(window.location.search);
+        const adminId = params.get("adminId");
+        if (!adminId) { window.location.href = "admin-profile.html"; return; }
+        _viewAdminId  = parseInt(adminId);
+
+        try {
+            const res = await fetch(API_BASE_URL + "/admin/admin-profile/" + adminId, { headers: getAuthHeaders() });
+            if (!res.ok) { showToast("Admin not found", "error"); return; }
+            const d = await res.json();
+
+            document.getElementById("viewAdminName").textContent     = d.name || "Admin";
+            document.getElementById("viewAdminEmail").textContent    = d.email || "";
+            document.getElementById("viewAdminUsername").textContent = d.username ? "@" + d.username : "@—";
+            document.getElementById("vStatSolved").textContent       = d.ticketsSolved ?? "—";
+            document.getElementById("vStatBlocked").textContent      = d.usersBlocked  ?? "—";
+            document.getElementById("pageNavTitle").textContent      = d.name + "'s Profile";
+            document.title = d.name + " - ResolviaAI";
+
+            if (d.createdAt) {
+                document.getElementById("viewAdminSince").textContent =
+                    "Member since " + new Date(d.createdAt).toLocaleDateString("en-IN",
+                        { day:"2-digit", month:"short", year:"numeric" });
+            }
+
+            // Avatar
+            const avatarEl = document.getElementById("viewAdminAvatar");
+            const dot      = avatarEl ? avatarEl.querySelector(".pv-online-dot") : null;
+            const photo    = localStorage.getItem("profilePic_admin_" + adminId);
+            if (photo && avatarEl) {
+                avatarEl.innerHTML = `<img src="${photo}" style="width:72px;height:72px;border-radius:50%;object-fit:cover;" alt="${d.name}">`;
+                if (dot) avatarEl.appendChild(dot);
+            } else if (avatarEl) {
+                avatarEl.textContent = (d.name || "A").charAt(0).toUpperCase();
+                if (dot) avatarEl.appendChild(dot);
+            }
+
+            // Online status
+            const lastSeen = parseInt(localStorage.getItem("adminLastSeen_" + adminId) || "0");
+            const isOnline = (Date.now() - lastSeen) < 15 * 60 * 1000 && lastSeen > 0;
+            const onlineDot = document.getElementById("viewOnlineDot");
+            const badge     = document.getElementById("viewOnlineBadge");
+            if (onlineDot) onlineDot.style.background = isOnline ? "#10b981" : "#94a3b8";
+            if (badge) { badge.textContent = isOnline ? "🟢 Online" : "⚫ Offline"; badge.className = isOnline ? "badge-online" : "badge-offline"; }
+
+        } catch(e) { showToast("Failed to load admin profile", "error"); }
+    });
+
+    function openChatWithAdmin() {
+        if (!_viewAdminId) return;
+        localStorage.setItem("chatWithAdminId", _viewAdminId);
+        window.location.href = "admin-chat.html";
+    }
+    </script>
+    <script>(function(){var u=localStorage.getItem("currentUserId");if(u&&localStorage.getItem("role")==="ADMIN")localStorage.setItem("adminLastSeen_"+u,Date.now().toString());})();</script>
+</body>
+</html>

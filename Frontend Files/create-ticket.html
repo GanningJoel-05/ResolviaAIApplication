@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create Ticket - ResolviaAI</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="dashboard.css">
+
+    <style>
+        .tpl-btn {
+            padding: 0.55rem 0.85rem;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            background: var(--surface);
+            color: var(--text-main);
+            font-size: 0.82rem;
+            font-weight: 500;
+            cursor: pointer;
+            text-align: left;
+            transition: all 0.2s;
+            font-family: inherit;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .tpl-btn:hover {
+            background: var(--primary);
+            color: #fff;
+            border-color: var(--primary);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(79,70,229,0.25);
+        }
+        .tpl-btn.applied {
+            background: var(--primary);
+            color: #fff;
+            border-color: var(--primary);
+        }
+
+        /* ── Smart Suggestions ── */
+        .suggestion-wrapper { position: relative; }
+        #suggestionBox {
+            position: absolute; top: 100%; left: 0; right: 0; z-index: 500;
+            background: var(--surface); border: 1px solid var(--border);
+            border-top: none; border-radius: 0 0 10px 10px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.1);
+            max-height: 260px; overflow-y: auto;
+            display: none;
+        }
+        [data-theme="dark"] #suggestionBox {
+            background: #1e293b; border-color: #334155;
+        }
+        .sg-item {
+            padding: 0.75rem 1rem; cursor: pointer;
+            border-bottom: 1px solid var(--border);
+            transition: background 0.15s;
+            display: flex; align-items: flex-start; gap: 0.65rem;
+        }
+        [data-theme="dark"] .sg-item { border-bottom-color: #334155; }
+        .sg-item:last-child { border-bottom: none; }
+        .sg-item:hover, .sg-item.selected { background: #ede9fe; }
+        [data-theme="dark"] .sg-item:hover,
+        [data-theme="dark"] .sg-item.selected { background: #1e1b4b; }
+        .sg-icon { font-size: 1.1rem; flex-shrink: 0; margin-top: 1px; }
+        .sg-title { font-weight: 600; font-size: 0.9rem; color: var(--text-main); margin-bottom: 1px; }
+        [data-theme="dark"] .sg-title { color: #f1f5f9; }
+        .sg-desc  { font-size: 0.78rem; color: var(--text-muted); line-height: 1.4; }
+        .sg-hint  {
+            padding: 0.5rem 1rem; font-size: 0.75rem; color: var(--text-muted);
+            text-align: center; background: var(--background);
+            border-top: 1px solid var(--border);
+        }
+        [data-theme="dark"] .sg-hint { background: #0f172a; border-top-color: #334155; }
+    </style>
+</head>
+<body class="dashboard-body">
+
+    <div class="user-main-wrapper">
+        <nav class="dashboard-nav">
+            <span class="nav-page-title">Create Ticket</span>
+            <div class="nav-right">
+                <div class="user-profile" onclick="window.location.href='profile.html'" title="My Profile">
+                    <div class="avatar" id="userAvatar">U</div>
+                    <div class="user-info">
+                        <span class="user-name"  id="userNameText">User</span>
+                        <span class="user-email" id="userEmailText"><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="fa8f899f88ba9f979b9396d4999597">[email&#160;protected]</a></span>
+                    </div>
+                </div>
+                <button class="btn-logout" onclick="handleLogout()">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                        <polyline points="16 17 21 12 16 7"></polyline>
+                        <line x1="21" y1="12" x2="9" y2="12"></line>
+                    </svg>
+                </button>
+            </div>
+        </nav>
+
+        <main class="dashboard-main form-page-main">
+            <a href="dashboard.html" class="back-link">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"
+                    fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline>
+                </svg>
+                Back to Dashboard
+            </a>
+
+            <!-- Punishment Block Banner (shown only if user is blocked) -->
+            <div id="punishmentBanner" style="display:none;background:#fee2e2;border:1px solid #fecaca;
+                border-left:4px solid #ef4444;border-radius:8px;padding:1rem 1.25rem;
+                margin-bottom:1.5rem;font-size:0.9rem;color:#991b1b;line-height:1.6;">
+                <strong>🚫 Ticket Creation Blocked!</strong><br>
+                You have raised too many non-technical tickets today.<br>
+                You can create tickets again in: <strong id="punishCountdown">--:--</strong>
+            </div>
+
+            <!-- Info Banner -->
+            <div style="background:#eff6ff;border:1px solid #bfdbfe;border-left:4px solid #4f46e5;
+                border-radius:8px;padding:0.9rem 1.25rem;margin-bottom:1.5rem;
+                font-size:0.9rem;color:#1e40af;line-height:1.5;">
+                <strong>Note:</strong> Please describe only IT or technical issues (hardware, software, network, etc.).
+                Non-technical requests will be flagged for admin review.
+            </div>
+
+            <header class="page-header">
+                <h1>Support Ticket</h1>
+                <p>Describe your technical issue and AI will analyze and suggest a solution instantly.</p>
+            </header>
+
+            <!-- TICKET TEMPLATES -->
+            <div style="margin-bottom:1.5rem;">
+                <div style="font-size:0.82rem;font-weight:600;text-transform:uppercase;
+                    letter-spacing:0.06em;color:var(--text-muted);margin-bottom:0.85rem;">
+                    ⚡ Quick Templates — click to pre-fill
+                </div>
+                <div id="templateGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:0.6rem;">
+                    <button type="button" class="tpl-btn" onclick="applyTemplate('WiFi Not Connecting','My laptop/device is unable to connect to the WiFi network. The network is visible but the connection fails or keeps dropping.','Network')">
+                        📶 WiFi Problem
+                    </button>
+                    <button type="button" class="tpl-btn" onclick="applyTemplate('Laptop Overheating','My laptop is overheating and slowing down. The fan is running loudly and the device gets very hot during normal use.','Hardware')">
+                        🔥 Laptop Overheating
+                    </button>
+                    <button type="button" class="tpl-btn" onclick="applyTemplate('Password Reset Required','I am unable to log in to my account. I have forgotten my password and need it to be reset so I can regain access.','Software')">
+                        🔑 Password Reset
+                    </button>
+                    <button type="button" class="tpl-btn" onclick="applyTemplate('Software Not Opening','An application on my computer is not opening or keeps crashing immediately after launch. I have tried restarting the system.','Software')">
+                        💻 App Crash
+                    </button>
+                    <button type="button" class="tpl-btn" onclick="applyTemplate('Printer Not Working','The office printer is not printing. It shows as connected but jobs remain in the queue or return an error.','Hardware')">
+                        🖨️ Printer Issue
+                    </button>
+                    <button type="button" class="tpl-btn" onclick="applyTemplate('Slow Computer Performance','My computer has been running very slowly. Applications take a long time to open and the system is generally unresponsive.','Hardware')">
+                        🐢 Slow Computer
+                    </button>
+                    <button type="button" class="tpl-btn" onclick="applyTemplate('Email Not Syncing','My email client is not syncing or receiving new emails. The last sync was several hours ago and new emails are not appearing.','Software')">
+                        📧 Email Issue
+                    </button>
+                    <button type="button" class="tpl-btn" onclick="applyTemplate('USB Device Not Detected','A USB device (pen drive / external hard disk / keyboard) is not being detected when plugged into my computer.','Hardware')">
+                        🔌 USB Not Detected
+                    </button>
+                </div>
+            </div>
+
+            <section class="card">
+                <div class="card-header">
+                    <h2>Create New Ticket</h2>
+                    <p>Fill in all fields. AI will also auto-correct your category selection if needed.</p>
+                </div>
+                <form id="ticketForm" class="ticket-form" onsubmit="return handleTicketSubmit(event)">
+                    <div class="form-group">
+                        <label for="ticketTitle">Title
+                            <span style="font-weight:400;font-size:0.78rem;color:var(--text-muted);
+                                margin-left:0.4rem;">— AI suggestions appear as you type</span>
+                        </label>
+                        <div class="suggestion-wrapper">
+                            <input type="text" id="ticketTitle" class="form-control"
+                                placeholder="e.g. Laptop overheating, WiFi not connecting..."
+                                autocomplete="off" required
+                                oninput="handleTitleInput()"
+                                onkeydown="handleSuggestionKey(event)"
+                                onfocus="handleTitleInput()"
+                                onblur="setTimeout(hideSuggestions, 180)">
+                            <div id="suggestionBox"></div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="ticketDescription">Description</label>
+                        <textarea id="ticketDescription" class="form-control" rows="5"
+                            placeholder="Describe the issue in detail — what happened, when it started, what you tried..." required></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="ticketCategory">Category</label>
+                        <select id="ticketCategory" class="form-control" required>
+                            <option value="" disabled selected>Select a category</option>
+                            <option value="Hardware">Hardware</option>
+                            <option value="Software">Software</option>
+                            <option value="Network">Network</option>
+                            <option value="General">General</option>
+                        </select>
+                    </div>
+                    <div class="form-actions">
+                        <a href="dashboard.html" class="btn btn-muted">Cancel</a>
+                        <button type="submit" class="btn btn-primary">Submit Ticket</button>
+                    </div>
+                </form>
+            </section>
+
+    <script src="common.js"></script>
+    <script src="theme.js"></script>
+    <script src="dashboard.js"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            const userId = localStorage.getItem("currentUserId");
+            if (!userId) return;
+
+            function updatePunishmentUI() {
+                const blockUntil = localStorage.getItem("ntBlockUntil_" + userId);
+                if (!blockUntil) return;
+                const remaining = new Date(blockUntil) - new Date();
+                if (remaining <= 0) {
+                    localStorage.removeItem("ntBlockUntil_" + userId);
+                    const banner = document.getElementById("punishmentBanner");
+                    const submitBtn = document.querySelector("#ticketForm button[type='submit']");
+                    if (banner)    { banner.style.display = "none"; }
+                    if (submitBtn) { submitBtn.disabled = false; submitBtn.style.opacity = "1"; submitBtn.style.cursor = "pointer"; }
+                    return;
+                }
+                const banner    = document.getElementById("punishmentBanner");
+                const submitBtn = document.querySelector("#ticketForm button[type='submit']");
+                if (banner) banner.style.display = "block";
+                if (submitBtn) { submitBtn.disabled = true; submitBtn.style.opacity = "0.5"; submitBtn.style.cursor = "not-allowed"; }
+                const mins = Math.floor(remaining / 60000);
+                const secs = Math.floor((remaining % 60000) / 1000);
+                const cd = document.getElementById("punishCountdown");
+                if (cd) cd.textContent = `${mins}m ${String(secs).padStart(2,"0")}s`;
+            }
+
+            updatePunishmentUI();
+            setInterval(updatePunishmentUI, 1000);
+        });
+    </script>
+
+    <script>
+        function applyTemplate(title, description, category) {
+            document.getElementById('ticketTitle').value       = title;
+            document.getElementById('ticketDescription').value = description;
+            const sel = document.getElementById('ticketCategory');
+            if (sel) {
+                for (let opt of sel.options) {
+                    if (opt.value === category) { sel.value = category; break; }
+                }
+            }
+            // Visual feedback — highlight applied button briefly
+            document.querySelectorAll('.tpl-btn').forEach(b => b.classList.remove('applied'));
+            event.target.classList.add('applied');
+            // Scroll to form
+            document.getElementById('ticketForm').scrollIntoView({ behavior:'smooth', block:'start' });
+        }
+    </script>
+
+    <script>
+    // ══════════════════════════════════════════════════════════════
+    // SMART TICKET SUGGESTIONS
+    // Real-time keyword matching as user types in the title field.
+    // ══════════════════════════════════════════════════════════════
+    const SUGGESTION_DB = [
+        { icon:"📶", title:"WiFi Not Connecting",        desc:"Device can't connect to WiFi network",        category:"Network",  desc_full:"My device is unable to connect to the WiFi network. The connection keeps failing or dropping." },
+        { icon:"📶", title:"Internet Very Slow",          desc:"Network connection is sluggish",               category:"Network",  desc_full:"My internet connection is extremely slow. Pages take very long to load and streaming is impossible." },
+        { icon:"📶", title:"No Network Access",           desc:"Connected but no internet",                    category:"Network",  desc_full:"My device shows connected to WiFi but there is no actual internet access. Cannot open any websites." },
+        { icon:"📶", title:"VPN Not Working",             desc:"Cannot connect to VPN",                        category:"Network",  desc_full:"I am unable to connect to the company VPN. The connection times out or shows an authentication error." },
+        { icon:"🔥", title:"Laptop Overheating",          desc:"Device gets very hot and slows down",          category:"Hardware", desc_full:"My laptop is overheating and slowing down. The fan runs loudly and the device becomes hot during normal use." },
+        { icon:"🖥️", title:"Computer Not Starting",       desc:"System won't boot up",                         category:"Hardware", desc_full:"My computer is not starting up. It either does not power on or gets stuck during boot." },
+        { icon:"🖥️", title:"Blue Screen Error (BSOD)",   desc:"Windows crashes with blue screen",             category:"Hardware", desc_full:"My computer is showing a Blue Screen of Death error and restarting automatically. Error code visible on screen." },
+        { icon:"🖨️", title:"Printer Not Working",         desc:"Printer is offline or not printing",           category:"Hardware", desc_full:"The printer is not printing. It shows as connected but jobs remain in the queue or return an error." },
+        { icon:"🖱️", title:"Mouse or Keyboard Not Working", desc:"Peripheral device not responding",           category:"Hardware", desc_full:"My mouse or keyboard is not responding. The device may be connected but is not detected by the system." },
+        { icon:"🔌", title:"USB Device Not Detected",     desc:"USB drive or device not recognized",           category:"Hardware", desc_full:"A USB device is not being detected when plugged into my computer. The system does not recognize it." },
+        { icon:"🔑", title:"Password Reset Required",     desc:"Forgot password or locked out",                category:"Software", desc_full:"I am unable to log in to my account. I have forgotten my password and need it reset to regain access." },
+        { icon:"💻", title:"Application Not Opening",    desc:"Software crashes on launch",                   category:"Software", desc_full:"An application is not opening or crashes immediately after launch. I have tried restarting the system." },
+        { icon:"💻", title:"Software Installation Failed", desc:"Can't install a program",                     category:"Software", desc_full:"I am unable to install a software application. The installer fails or shows an error message during installation." },
+        { icon:"📧", title:"Email Not Syncing",           desc:"Emails not appearing or sending",              category:"Software", desc_full:"My email client is not syncing or receiving new emails. The last sync was several hours ago." },
+        { icon:"🐢", title:"Computer Running Slowly",    desc:"System is very slow and unresponsive",         category:"Hardware", desc_full:"My computer has been running very slowly. Applications take a long time to open and the system is unresponsive." },
+        { icon:"🖥️", title:"Screen Display Issue",        desc:"Monitor flickering or blank screen",           category:"Hardware", desc_full:"My screen is flickering, showing distorted colors, or going blank intermittently during use." },
+        { icon:"🔊", title:"No Audio / Sound Not Working", desc:"Sound not coming from speakers",             category:"Hardware", desc_full:"There is no sound coming from my speakers or headphones. The audio device shows connected but produces no output." },
+        { icon:"🌐", title:"Website Not Loading",         desc:"Browser can't access a website",              category:"Software", desc_full:"A specific website is not loading in my browser. Other sites work fine but this one shows an error." },
+        { icon:"☁️", title:"Cloud Storage Not Syncing",  desc:"Files not syncing to cloud",                   category:"Software", desc_full:"My cloud storage is not syncing files. Changes made locally are not reflecting in the cloud or vice versa." },
+        { icon:"🦠", title:"Possible Virus or Malware",  desc:"Suspected security threat on device",          category:"Software", desc_full:"My computer is behaving strangely — showing pop-ups, running slowly, or opening programs I didn't start. I suspect a virus." },
+        { icon:"💾", title:"Storage Almost Full",         desc:"Hard drive running out of space",              category:"Hardware", desc_full:"My computer storage is nearly full. I keep getting warnings that disk space is critically low." },
+        { icon:"🔄", title:"Windows Update Issue",        desc:"Update failing or stuck",                      category:"Software", desc_full:"My Windows update is failing to install or is stuck in a loop. The system keeps trying to update but never completes." },
+        { icon:"📷", title:"Webcam Not Working",          desc:"Camera not detected in video calls",           category:"Hardware", desc_full:"My webcam is not being detected during video calls. It may show as unavailable in meeting apps." },
+        { icon:"🔐", title:"Account Locked Out",          desc:"Cannot access system account",                 category:"Software", desc_full:"My account has been locked after multiple failed login attempts. I cannot access the system or application." }
+    ];
+
+    let _sgIndex = -1;
+
+    function handleTitleInput() {
+        const val = (document.getElementById('ticketTitle').value || '').toLowerCase().trim();
+        const box = document.getElementById('suggestionBox');
+        if (!box) return;
+
+        if (val.length < 2) { hideSuggestions(); return; }
+
+        // Match by keyword in title or desc
+        const keywords = val.split(/\s+/);
+        const matches  = SUGGESTION_DB.filter(function(s) {
+            const target = (s.title + ' ' + s.desc).toLowerCase();
+            return keywords.some(function(kw) { return target.includes(kw); });
+        }).slice(0, 6);
+
+        if (matches.length === 0) { hideSuggestions(); return; }
+
+        _sgIndex = -1;
+        box.innerHTML = matches.map(function(s, i) {
+            return '<div class="sg-item" data-idx="' + i + '" ' +
+                   'onmousedown="applySuggestion(' + i + ')">' +
+                   '<span class="sg-icon">' + s.icon + '</span>' +
+                   '<div class="sg-info">' +
+                   '<div class="sg-title">' + s.title + '</div>' +
+                   '<div class="sg-desc">' + s.desc + '</div>' +
+                   '</div></div>';
+        }).join('') +
+        '<div class="sg-hint">↑↓ navigate · Enter to select · Esc to close</div>';
+
+        box._matches = matches;
+        box.style.display = 'block';
+    }
+
+    function applySuggestion(idx) {
+        const box = document.getElementById('suggestionBox');
+        if (!box || !box._matches) return;
+        const s = box._matches[idx];
+        if (!s) return;
+
+        document.getElementById('ticketTitle').value = s.title;
+
+        var descEl = document.getElementById('ticketDescription');
+        if (descEl && !descEl.value.trim()) descEl.value = s.desc_full;
+
+        var catEl = document.getElementById('ticketCategory');
+        if (catEl) {
+            for (var i = 0; i < catEl.options.length; i++) {
+                if (catEl.options[i].value === s.category) {
+                    catEl.value = s.category; break;
+                }
+            }
+        }
+        hideSuggestions();
+
+        // Show "suggestion applied" toast-like hint
+        var titleEl = document.getElementById('ticketTitle');
+        if (titleEl) {
+            titleEl.style.borderColor = '#4f46e5';
+            setTimeout(function() { titleEl.style.borderColor = ''; }, 1500);
+        }
+    }
+
+    function handleSuggestionKey(e) {
+        var box = document.getElementById('suggestionBox');
+        if (!box || box.style.display === 'none') return;
+        var items = box.querySelectorAll('.sg-item');
+        if (!items.length) return;
+
+        if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            _sgIndex = Math.min(_sgIndex + 1, items.length - 1);
+            items.forEach(function(el, i) { el.classList.toggle('selected', i === _sgIndex); });
+        } else if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            _sgIndex = Math.max(_sgIndex - 1, 0);
+            items.forEach(function(el, i) { el.classList.toggle('selected', i === _sgIndex); });
+        } else if (e.key === 'Enter' && _sgIndex >= 0) {
+            e.preventDefault();
+            applySuggestion(_sgIndex);
+        } else if (e.key === 'Escape') {
+            hideSuggestions();
+        }
+    }
+
+    function hideSuggestions() {
+        var box = document.getElementById('suggestionBox');
+        if (box) box.style.display = 'none';
+        _sgIndex = -1;
+    }
+    </script>
+
+</body>
+</html>

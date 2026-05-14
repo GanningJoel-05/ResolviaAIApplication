@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Settings - ResolviaAI Admin</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="admin-dashboard.css">
+    <style>
+        .settings-wrapper { max-width: 680px; margin: 0 auto; }
+        .settings-section { margin-bottom: 2rem; }
+        .settings-section h3 {
+            font-size: 0.85rem; font-weight: 600; text-transform: uppercase;
+            letter-spacing: 0.06em; color: #6b7280;
+            margin: 0 0 1rem; padding-bottom: 0.5rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .settings-row {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 1rem 0; border-bottom: 1px solid var(--border-color); gap: 1rem;
+        }
+        .settings-row:last-child { border-bottom: none; }
+        .settings-row-info h4 { font-size: 0.95rem; font-weight: 600; color: var(--text-color); margin: 0 0 0.2rem; }
+        .settings-row-info p  { font-size: 0.85rem; color: #6b7280; margin: 0; line-height: 1.4; }
+        .settings-btn {
+            padding: 0.45rem 1.1rem; border-radius: 7px; font-size: 0.85rem;
+            font-weight: 500; cursor: pointer; white-space: nowrap;
+            font-family: inherit; transition: all 0.2s; border: 1px solid var(--border-color);
+            background: var(--card-bg); color: var(--text-color);
+        }
+        .settings-btn:hover { background: #f3f4f6; }
+        .settings-btn-danger { background: #fee2e2; color: #991b1b; border-color: #fecaca; }
+        .settings-btn-danger:hover { background: #fecaca; }
+        .settings-btn-primary { background: var(--primary-accent); color: #fff; border-color: var(--primary-accent); }
+        .settings-btn-primary:hover { background: #4338ca; }
+
+        /* Password form */
+        .pwd-form { display:none; margin-top:1rem; padding:1.25rem;
+            background:var(--bg-color); border-radius:8px; border:1px solid var(--border-color); }
+        .pwd-form.open { display:block; }
+        .pwd-input { width:100%; padding:0.65rem 0.9rem; border:1px solid var(--border-color);
+            border-radius:7px; font-size:0.95rem; font-family:inherit; margin-top:0.4rem;
+            background:#fff; color:var(--text-color); box-sizing:border-box; }
+        .pwd-input:focus { outline:none; border-color:var(--primary-accent);
+            box-shadow:0 0 0 3px rgba(79,70,229,0.1); }
+
+        /* About card */
+        .about-card { background:var(--card-bg); border:1px solid var(--border-color);
+            border-radius:var(--radius); padding:1.75rem; }
+        .about-tag { display:inline-block; padding:3px 10px; border-radius:99px;
+            font-size:0.75rem; font-weight:600; margin-right:0.5rem; margin-bottom:0.5rem; }
+    </style>
+</head>
+<body class="admin-body">
+
+    <aside class="sidebar">
+        <div class="sidebar-header"><h2>ResolviaAI</h2></div>
+        <ul class="sidebar-menu">
+            <li><a href="admin-dashboard.html">Dashboard</a></li>
+            <li><a href="ticket-management.html">Ticket Management</a></li>
+            <li><a href="ai-decision-panel.html">AI Decision Panel</a></li>
+                        <li><a href="admin-activity-log.html">Activity Log</a></li>
+<li><a href="admin-profile.html">My Profile</a></li>
+            <li><a href="admin-settings.html" class="active">Settings</a></li>
+        </ul>
+    </aside>
+
+    <div class="main-wrapper">
+        <nav class="admin-nav">
+            <div class="nav-title">Settings</div>
+            <div class="nav-right">
+                <div class="user-profile">
+                    <div class="avatar-circle" id="adminAvatar">A</div>
+                    <span class="user-name" id="adminNameText">Admin</span>
+                </div>
+                <button class="btn-logout" onclick="handleLogout()">Logout</button>
+            </div>
+        </nav>
+
+        <main class="admin-content">
+            <div class="settings-wrapper">
+
+                <!-- Account Settings -->
+                <div class="card" style="padding:1.75rem; margin-bottom:2rem;">
+                    <div class="settings-section">
+                        <h3>Account</h3>
+
+                        <div class="settings-row">
+                            <div class="settings-row-info">
+                                <h4>Change Password</h4>
+                                <p>Update your admin account password.</p>
+                            </div>
+                            <button class="settings-btn settings-btn-primary"
+                                onclick="togglePasswordForm()">Change</button>
+                        </div>
+
+                        <!-- Password change form (inline) -->
+                        <div class="pwd-form" id="pwdForm">
+                            <div style="margin-bottom:1rem;">
+                                <label style="font-size:0.85rem;font-weight:600;color:var(--text-color);">
+                                    New Password
+                                </label>
+                                <input type="password" id="newPwd" class="pwd-input"
+                                    placeholder="••••••••"
+                                    oninput="checkAdminPasswordStrength(this.value)">
+                                <div class="password-strength" style="margin-top:0.5rem;">
+                                    <div id="adminStrengthBar" class="password-strength-bar"></div>
+                                </div>
+                                <p style="font-size:0.78rem;color:#6b7280;margin-top:0.4rem;">
+                                    Min 8 characters with letters, numbers & symbols.
+                                </p>
+                            </div>
+                            <div style="margin-bottom:1.25rem;">
+                                <label style="font-size:0.85rem;font-weight:600;color:var(--text-color);">
+                                    Confirm New Password
+                                </label>
+                                <input type="password" id="confirmPwd" class="pwd-input"
+                                    placeholder="••••••••">
+                            </div>
+                            <div style="display:flex;gap:0.75rem;">
+                                <button class="settings-btn settings-btn-primary"
+                                    onclick="submitPasswordChange()">Save Password</button>
+                                <button class="settings-btn"
+                                    onclick="togglePasswordForm()">Cancel</button>
+                            </div>
+                        </div>
+
+                        <div class="settings-row">
+                            <div class="settings-row-info">
+                                <h4>Sign Out</h4>
+                                <p>Log out of your admin account.</p>
+                            </div>
+                            <button class="settings-btn settings-btn-danger"
+                                onclick="confirmLogout()">Logout</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- About ResolviaAI -->
+                <div class="card" style="padding:1.75rem; margin-bottom:2rem; overflow:hidden;">
+                    <div class="settings-section" style="margin-bottom:0;">
+                        <h3>About ResolviaAI</h3>
+
+                        <!-- Hero banner -->
+                        <div style="background:linear-gradient(135deg,#4F46E5 0%,#6366f1 60%,#818cf8 100%);
+                            border-radius:10px; padding:1.75rem 1.5rem; margin-bottom:1.25rem;
+                            position:relative; overflow:hidden;">
+                            <!-- Decorative circles -->
+                            <div style="position:absolute;width:120px;height:120px;border-radius:50%;
+                                background:rgba(255,255,255,0.07);top:-30px;right:-20px;"></div>
+                            <div style="position:absolute;width:80px;height:80px;border-radius:50%;
+                                background:rgba(255,255,255,0.05);bottom:-20px;right:60px;"></div>
+                            <div style="font-size:1.5rem;font-weight:800;color:#fff;margin-bottom:0.4rem;
+                                letter-spacing:-0.02em;">
+                                Resolvia<span style="color:#a5b4fc;">AI</span>
+                            </div>
+                            <div style="font-size:0.88rem;color:rgba(255,255,255,0.8);line-height:1.55;max-width:520px;">
+                                An intelligent IT support platform powered by Gemini 2.5 Flash AI — automatically
+                                classifies tickets, generates step-by-step resolutions, and routes complex
+                                cases to admins through a Human-in-the-Loop escalation workflow.
+                            </div>
+                            <div style="margin-top:1rem;display:inline-flex;align-items:center;gap:0.5rem;
+                                background:rgba(255,255,255,0.15);border-radius:99px;
+                                padding:4px 12px;font-size:0.78rem;color:#fff;font-weight:600;">
+                                <span style="width:7px;height:7px;border-radius:50%;background:#4ade80;
+                                    display:inline-block;box-shadow:0 0 6px #4ade80;"></span>
+                                Live · Hackathon 2026
+                            </div>
+                        </div>
+
+                        <!-- Feature grid -->
+                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.85rem;margin-bottom:1.25rem;">
+
+                            <div style="background:#f5f3ff;border:1px solid #ede9fe;border-radius:9px;padding:1rem;">
+                                <div style="font-size:1.1rem;margin-bottom:0.3rem;">🤖</div>
+                                <div style="font-size:0.88rem;font-weight:700;color:#4c1d95;margin-bottom:0.2rem;">AI Auto-Resolution</div>
+                                <div style="font-size:0.8rem;color:#6d28d9;line-height:1.45;">
+                                    High-confidence tickets resolved instantly by Gemini 2.5 Flash — no admin needed.
+                                </div>
+                            </div>
+
+                            <div style="background:#ecfdf5;border:1px solid #d1fae5;border-radius:9px;padding:1rem;">
+                                <div style="font-size:1.1rem;margin-bottom:0.3rem;">🔁</div>
+                                <div style="font-size:0.88rem;font-weight:700;color:#065f46;margin-bottom:0.2rem;">Human-in-the-Loop</div>
+                                <div style="font-size:0.8rem;color:#047857;line-height:1.45;">
+                                    Low-confidence or complex cases escalated to admins for manual review.
+                                </div>
+                            </div>
+
+                            <div style="background:#eff6ff;border:1px solid #dbeafe;border-radius:9px;padding:1rem;">
+                                <div style="font-size:1.1rem;margin-bottom:0.3rem;">🎯</div>
+                                <div style="font-size:0.88rem;font-weight:700;color:#1e3a8a;margin-bottom:0.2rem;">Smart Classification</div>
+                                <div style="font-size:0.8rem;color:#1d4ed8;line-height:1.45;">
+                                    AI detects category, priority, and technical validity automatically.
+                                </div>
+                            </div>
+
+                            <div style="background:#fff7ed;border:1px solid #fed7aa;border-radius:9px;padding:1rem;">
+                                <div style="font-size:1.1rem;margin-bottom:0.3rem;">🚫</div>
+                                <div style="font-size:0.88rem;font-weight:700;color:#92400e;margin-bottom:0.2rem;">Non-Tech Detection</div>
+                                <div style="font-size:0.8rem;color:#b45309;line-height:1.45;">
+                                    Non-IT tickets are auto-rejected by AI — keeping the queue clean.
+                                </div>
+                            </div>
+
+                            <div style="background:#fdf4ff;border:1px solid #f3e8ff;border-radius:9px;padding:1rem;">
+                                <div style="font-size:1.1rem;margin-bottom:0.3rem;">📊</div>
+                                <div style="font-size:0.88rem;font-weight:700;color:#6b21a8;margin-bottom:0.2rem;">Admin Analytics</div>
+                                <div style="font-size:0.8rem;color:#7e22ce;line-height:1.45;">
+                                    Real-time dashboard with charts, AI confidence scores, and ticket trends.
+                                </div>
+                            </div>
+
+                            <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:9px;padding:1rem;">
+                                <div style="font-size:1.1rem;margin-bottom:0.3rem;">🔐</div>
+                                <div style="font-size:0.88rem;font-weight:700;color:#14532d;margin-bottom:0.2rem;">Secure Role Access</div>
+                                <div style="font-size:0.8rem;color:#166534;line-height:1.45;">
+                                    JWT-based auth with separate USER and ADMIN roles and domain restrictions.
+                                </div>
+                            </div>
+
+                        </div>
+
+                        <!-- Footer meta -->
+                        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;
+                            gap:0.5rem;padding-top:1rem;border-top:1px solid var(--border-color);">
+                            <div style="display:flex;gap:1.25rem;flex-wrap:wrap;">
+                                <span style="font-size:0.8rem;color:#6b7280;">
+                                    <strong style="color:var(--text-color);">Version</strong> &nbsp;1.0.0
+                                </span>
+                                <span style="font-size:0.8rem;color:#6b7280;">
+                                    <strong style="color:var(--text-color);">AI Model</strong> &nbsp;Gemini 2.5 Flash
+                                </span>
+                                <span style="font-size:0.8rem;color:#6b7280;">
+                                    <strong style="color:var(--text-color);">Built for</strong> &nbsp;Hackathon 2026
+                                </span>
+                            </div>
+                            <span style="font-size:0.78rem;color:#9ca3af;">Made with ❤️ by Team ResolviaAI</span>
+                        </div>
+
+                    </div>
+                </div>
+
+            </div>
+        </main>
+    </div>
+
+    <script src="common.js"></script>
+    <script src="theme.js"></script>
+    <script src="admin-dashboard.js"></script>
+    <script>
+        let adminEmail = "";
+
+        document.addEventListener("DOMContentLoaded", async () => {
+            await loadAdminProfile();
+            // Get admin email for password reset
+            try {
+                const res  = await fetch(`${API_BASE_URL}/user/profile`, { headers: getAuthHeaders() });
+                const user = await res.json();
+                adminEmail = user.email;
+            } catch (e) {}
+        });
+
+        function togglePasswordForm() {
+            const form = document.getElementById("pwdForm");
+            form.classList.toggle("open");
+            if (!form.classList.contains("open")) {
+                document.getElementById("newPwd").value     = "";
+                document.getElementById("confirmPwd").value = "";
+                document.getElementById("adminStrengthBar").className = "password-strength-bar";
+            }
+        }
+
+        function checkAdminPasswordStrength(password) {
+            const bar = document.getElementById("adminStrengthBar");
+            if (!bar) return;
+            let strength = 0;
+            if (password.length >= 8)          strength++;
+            if (/[A-Z]/.test(password))        strength++;
+            if (/[0-9]/.test(password))        strength++;
+            if (/[^A-Za-z0-9]/.test(password)) strength++;
+            bar.className = "password-strength-bar";
+            if      (strength <= 1) bar.classList.add("pass-weak");
+            else if (strength <= 3) bar.classList.add("pass-medium");
+            else                    bar.classList.add("pass-strong");
+        }
+
+        async function submitPasswordChange() {
+            const newPwd     = document.getElementById("newPwd").value;
+            const confirmPwd = document.getElementById("confirmPwd").value;
+
+            if (!newPwd || newPwd.length < 8) {
+                showToast("Password must be at least 8 characters", "warning"); return;
+            }
+            if (newPwd !== confirmPwd) {
+                showToast("Passwords do not match", "error"); return;
+            }
+            if (!adminEmail) {
+                showToast("Could not identify admin email", "error"); return;
+            }
+
+            try {
+                const res = await fetch(`${API_BASE_URL}/auth/reset-password`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ email: adminEmail, newPassword: newPwd })
+                });
+                if (!res.ok) { showToast("Password update failed", "error"); return; }
+                showToast("Password updated successfully!", "success");
+                togglePasswordForm();
+            } catch (e) {
+                showToast("Server error. Please try again.", "error");
+            }
+        }
+
+        function confirmLogout() {
+            showConfirm(
+                "Are you sure you want to log out of your admin account?",
+                () => handleLogout(),
+                "Logout", "#ef4444"
+            );
+        }
+    </script>
+
+    <script>
+    // BATCH 5A: Track admin last-seen for online/offline status
+    (function() {
+        var userId = localStorage.getItem("currentUserId");
+        if (userId && localStorage.getItem("role") === "ADMIN") {
+            localStorage.setItem("adminLastSeen_" + userId, Date.now().toString());
+        }
+    })();
+    </script>
+</body>
+</html>
